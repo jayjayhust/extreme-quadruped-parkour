@@ -5,8 +5,8 @@ You have to see /home/*/IsaacLab/source/isaaclab_tasks/isaaclab_tasks/direct/go2
 
 moreover, you can get some information about scripts/rein~/rsl_rl/train.py
 
-2025.09.17 : Forward, Inverse Kinematics clear, simplify and make up go2_env clearly and implement class for Dynamics solver  
-
+- 2025.09.17 : Forward, Inverse Kinematics clear, simplify and make up go2_env clearly and implement class for Dynamics solver  
+- 2025.09.19 : Inverse Kinemtaics divergence solve, add rew_default_close in branch "3d_IK_no_divergence"
 
 
 ## License
