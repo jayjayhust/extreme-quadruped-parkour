@@ -116,8 +116,8 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     # env
     observation_space = 235
 
-    sim = Go2FlatEnvCfg.sim.replace(
-        physx=Go2FlatEnvCfg.sim.physx.replace(gpu_max_rigid_patch_count=12 * 2**15)
+    sim: SimulationCfg = Go2FlatEnvCfg().sim.replace(
+        physx=Go2FlatEnvCfg().sim.physx.replace(gpu_max_rigid_patch_count=12 * 2**15)
     )
 
     terrain = TerrainImporterCfg(
