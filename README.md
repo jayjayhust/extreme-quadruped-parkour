@@ -38,13 +38,13 @@ pip install -e source/isaaclab_tasks
 
 #### Training unitree GO2
 ##### 기본 학습: reset idx 안 바꾸면, 매 episode마다 다른 속도 명령을 줘서 학습 -> 전진, 후진, 좌우, 회전 등 모든 움직임 학습
-> 기본 학습 명령어
-```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task=Go2-Direct-v0 --headless
-```
-> 만마리 로봇 학습하려면
+> 기본 학습 명령어(만마리 학습)
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task=Go2-Direct-v0 --headless --num_envs 10000
+```
+> Rough Terrain 학습 명령어
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 10000
 ```
 
 ##### 고정 Command를 줘서 학습하는법
