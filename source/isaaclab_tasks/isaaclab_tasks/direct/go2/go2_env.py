@@ -193,16 +193,36 @@ class Go2Env(DirectRLEnv):
         # 각각 random sampling 구현 ###########################################################################
         num_resets = len(env_ids)
 
-        lin_x_range = [1.0, 1.0]
+
+        ## THIS IS FOR TRAINING
+        lin_x_range = [-3.5, 3.5]
         rand_x = (torch.rand(num_resets, 1, device=self.device) * (lin_x_range[1] - lin_x_range[0])) + lin_x_range[0]
 
-        lin_y_range = [0.0, 0.0]
+        lin_y_range = [-2.0, 2.0]
         rand_y = (torch.rand(num_resets, 1, device=self.device) * (lin_y_range[1] - lin_y_range[0])) + lin_y_range[0]
 
-        ang_vel_range = [0.0, 0.0]
+        ang_vel_range = [-2.5, 2.5]
         rand_yaw = (torch.rand(num_resets, 1, device=self.device) * (ang_vel_range[1] - ang_vel_range[0])) + ang_vel_range[0]
 
         self._commands[env_ids] = torch.cat([rand_x, rand_y, rand_yaw], dim=1)
+
+        # ## THIS IS FOR PLAYING
+        # '''
+        # # 고정된 x방향 속도로만 이동 (2.5 m/s)
+        # fixed_x = torch.ones(num_resets, 1, device=self.device) * 2.5  # x방향 2.5 m/s
+        # fixed_y = torch.zeros(num_resets, 1, device=self.device)       # y방향 0.0 m/s
+        # fixed_yaw = torch.zeros(num_resets, 1, device=self.device)     # yaw 0.0 rad/s
+        # self._commands[env_ids] = torch.cat([fixed_x, fixed_y, fixed_yaw], dim=1)   
+        # '''
+        # # 턴하면서 빠르게 이동
+        # fixed_x = torch.ones(num_resets, 1,
+        # device=self.device) * 3.0   # x방향 3.0 m/s
+        # fixed_y = torch.zeros(num_resets, 1,
+        # device=self.device)        # y방향 0.0 m/s
+        # fixed_yaw = torch.ones(num_resets, 1,
+        # device=self.device) * 2.0  # yaw 2.0 rad/s
+        # self._commands[env_ids] = torch.cat([fixed_x,
+        # fixed_y, fixed_yaw], dim=1)        
         
         ######################################################################################################
         
