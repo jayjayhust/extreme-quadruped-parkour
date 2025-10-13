@@ -195,13 +195,13 @@ class Go2Env(DirectRLEnv):
 
 
         ## THIS IS FOR TRAINING
-        lin_x_range = [-3.5, 3.5]
+        lin_x_range = [-1.0, 1.0]
         rand_x = (torch.rand(num_resets, 1, device=self.device) * (lin_x_range[1] - lin_x_range[0])) + lin_x_range[0]
 
-        lin_y_range = [-2.0, 2.0]
+        lin_y_range = [-1.0, 1.0]
         rand_y = (torch.rand(num_resets, 1, device=self.device) * (lin_y_range[1] - lin_y_range[0])) + lin_y_range[0]
 
-        ang_vel_range = [-2.5, 2.5]
+        ang_vel_range = [-1.0, 1.0]
         rand_yaw = (torch.rand(num_resets, 1, device=self.device) * (ang_vel_range[1] - ang_vel_range[0])) + ang_vel_range[0]
 
         self._commands[env_ids] = torch.cat([rand_x, rand_y, rand_yaw], dim=1)
