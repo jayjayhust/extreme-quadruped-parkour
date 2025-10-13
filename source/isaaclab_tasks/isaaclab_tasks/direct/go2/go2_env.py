@@ -147,7 +147,7 @@ class Go2Env(DirectRLEnv):
         # rew_base_height = torch.square(base_height - self.cfg.rewards.base_height_target)
         
         base_height = torch.mean(self._robot.data.root_link_pose_w[:, 2].unsqueeze(1) , dim=1)
-        print(base_height[0])
+        # print(base_height[0])  # 대걸님이 debug용으로 넣은 코드인듯
         rew_base_height = torch.square(base_height - 0.3)
         ##########################################################################################################
         
