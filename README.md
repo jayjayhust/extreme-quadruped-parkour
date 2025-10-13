@@ -73,9 +73,14 @@ logs/rsl_rl/go2_flat_direct/2025-09-26_22-02-15/events.out.tfevents.1758891741.y
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Direct-v0 --num_envs 10
 ```
-##### Playing unitree GO2: 특정 model.pt 파일 돌리고 싶을 때
+> 특정 model.pt 파일 돌리고 싶을 때
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Direct-v0 --checkpoint logs/rsl_rl/go2_flat_direct/2025-09-26_15-00-56/model_4999.pt
+```
+> Rough Terrain Playing
+> Rough Terrain 학습 명령어
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --headless --num_envs 10000
 ```
 
 #### Infos
