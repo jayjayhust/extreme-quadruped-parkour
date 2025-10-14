@@ -40,7 +40,7 @@ class Go2FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 @configclass
 class Go2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 1500
+    max_iterations = 10000 # 원래 500이 기본이었는데 너무 짧아서 학습 엉망 go2 철푸덕해버림
     save_interval = 50
     experiment_name = "go2_rough_direct"
     empirical_normalization = False

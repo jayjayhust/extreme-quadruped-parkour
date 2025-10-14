@@ -58,6 +58,7 @@ def _reset_idx(self, env_ids: torch.Tensor | None):
     self._commands[env_ids] = fixed_command.expand(len(env_ids), 3)
 ```
 ##### Tensorboard로 학습 확인
+###### Flat Terrain
 ```bash
 tensorboard --logdir logs/rsl_rl/go2_flat_direct
 ```
@@ -67,6 +68,14 @@ tensorboard --logdir logs/rsl_rl/go2_flat_direct/2025-09-26_22-02-15/ --host 0.0
 ```
 > 참고: Tensorboard에 필요한 모든 데이터 정보는 아래 경로에 있음(이 파일 가지고 그래프를 그리는것임).
 logs/rsl_rl/go2_flat_direct/2025-09-26_22-02-15/events.out.tfevents.1758891741.yobel-desktop.453323.0
+###### Rough Terrain
+```bash
+tensorboard --logdir logs/rsl_rl/go2_rough_direct
+```
+OR
+```bash
+tensorboard --logdir logs/rsl_rl/go2_rough_direct/2025-09-26_22-02-15/ --host 0.0.0.0 --port 6006
+```
 
 #### Playing unitree GO2
 > 참고: 내가 주고 싶은 command로 가게 하고 싶으면, reset idx에서 학습에 적어놓은거처럼, command fix하기
