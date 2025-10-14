@@ -46,6 +46,10 @@ class Go2Env(DirectRLEnv):
                 "undesired_contacts",
                 "flat_orientation_l2",
                 "base_height",
+                "torques",
+                "stop_penalty_lin",
+                "stop_penalty_ang",
+                "dof_close_to_default",
             ]
         }
         # Get specific body indices
@@ -115,10 +119,14 @@ class Go2Env(DirectRLEnv):
         # yaw rate tracking
         yaw_rate_error = torch.square(self._commands[:, 2] - self._robot.data.root_ang_vel_b[:, 2])
         yaw_rate_error_mapped = torch.exp(-yaw_rate_error / 0.25)
-        # z velocity tracking
-        z_vel_error = torch.square(self._robot.data.root_lin_vel_b[:, 2])
+        # stop error
+        lin_vel_norm_sq = torch.sum(torch.square(self._robot.data.root_lin_vel_b[:, :2]), dim=1)
+        stop_penalty_lin = torch.exp(-2.0 * lin_vel_norm_sq)
         # angular velocity x/y
         ang_vel_error = torch.sum(torch.square(self._robot.data.root_ang_vel_b[:, :2]), dim=1)
+        stop_penalty_ang = torch.exp(-2.0 * ang_vel_error)
+        # z velocity tracking
+        z_vel_error = torch.square(self._robot.data.root_lin_vel_b[:, 2])
         # joint torques
         joint_torques = torch.sum(torch.square(self._robot.data.applied_torque), dim=1)
         # joint acceleration
@@ -139,9 +147,9 @@ class Go2Env(DirectRLEnv):
         contacts = torch.sum(is_contact, dim=1)
         # flat orientation
         flat_orientation = torch.sum(torch.square(self._robot.data.projected_gravity_b[:, :2]), dim=1)
-        
+
         # 직접 구현 한 reward function : base height #################################################################
-    
+
         # Penalize base height away from target
         # base_height = torch.mean(self.base_pos[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
         # rew_base_height = torch.square(base_height - self.cfg.rewards.base_height_target)
@@ -149,8 +157,12 @@ class Go2Env(DirectRLEnv):
         base_height = torch.mean(self._robot.data.root_link_pose_w[:, 2].unsqueeze(1) , dim=1)
         # print(base_height[0])  # 대걸님이 debug용으로 넣은 코드인듯
         rew_base_height = torch.square(base_height - 0.3)
+        rew_torque = torch.sum(self._robot.data.applied_torque, dim=1)
+        rew_dof_close_to_default = torch.sum(
+            torch.square(self._robot.data.joint_pos - self._robot.data.default_joint_pos), dim=1
+        )
         ##########################################################################################################
-        
+
         rewards = {
             "track_lin_vel_xy_exp": lin_vel_error_mapped * self.cfg.lin_vel_reward_scale * self.step_dt,
             "track_ang_vel_z_exp": yaw_rate_error_mapped * self.cfg.yaw_rate_reward_scale * self.step_dt,
@@ -163,6 +175,12 @@ class Go2Env(DirectRLEnv):
             "undesired_contacts": contacts * self.cfg.undesired_contact_reward_scale * self.step_dt,
             "flat_orientation_l2": flat_orientation * self.cfg.flat_orientation_reward_scale * self.step_dt,
             "base_height": rew_base_height * self.cfg.base_height_reward_scale * self.step_dt,
+            "torques": rew_torque * self.cfg.torque_reward_scale * self.step_dt,
+            "stop_penalty_lin": stop_penalty_lin * self.cfg.stop_penalty_reward_scale * self.step_dt,
+            "stop_penalty_ang": stop_penalty_ang * self.cfg.stop_penalty_reward_scale * self.step_dt,
+            "dof_close_to_default": (
+                rew_dof_close_to_default * self.cfg.dof_close_to_default_reward_scale * self.step_dt
+            ),
         }
         reward = torch.sum(torch.stack(list(rewards.values())), dim=0)
         # Logging
