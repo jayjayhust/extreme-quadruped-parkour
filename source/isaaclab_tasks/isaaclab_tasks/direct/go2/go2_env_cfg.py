@@ -127,7 +127,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
         prim_path="/World/ground",
         terrain_type="generator",
         terrain_generator=ROUGH_TERRAINS_CFG,
-        max_init_terrain_level=9,
+        max_init_terrain_level=5, # 사수님이 9였다가 1로 바꾸심 -> 사수님께서 5 정도로 바꾸심
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
             friction_combine_mode="multiply",
