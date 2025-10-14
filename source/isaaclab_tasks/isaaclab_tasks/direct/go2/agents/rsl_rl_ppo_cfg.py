@@ -45,6 +45,8 @@ class Go2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     save_interval = 50
     experiment_name = "go2_rough_direct"
     empirical_normalization = True # Default는 False였는데, 대걸님꺼에 맞춰봄
+
+    # init_noise_std, noise_std_type은 Actor network가 출력한 mean에 더해주는 "std"를 학습할 때 사용하는 변수
     policy = RslRlPpoActorCriticCfg(
         init_noise_std=1.0,
         noise_std_type="log",
