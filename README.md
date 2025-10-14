@@ -89,7 +89,7 @@ tensorboard --logdir logs/rsl_rl/go2_rough_direct/2025-09-26_22-02-15/ --host 0.
 > Rough Terrain Playing
 > Rough Terrain 학습 명령어
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --headless --num_envs 10000
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 1
 ```
 
 #### Infos
