@@ -153,4 +153,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     )
 
     # reward scales (override from flat config)
-    flat_orientation_reward_scale = 0.0
+    base_height_reward_scale = -1.0 # Rough Terrain에서는 낮추는게 더 좋음(학습되는거 보고 -0.5로 바꿔야할수도).
+    flat_orientation_reward_scale = 0.0 # 험지니까 몸이 엄청 기울거라서
+    feet_air_time_reward_scale = 1.0 # (거친 지형에서는 발을 오래 떼려는 경향 크면 안 될듯-> 나중에 0.5까지로도 바꿔야 할수도)
+
