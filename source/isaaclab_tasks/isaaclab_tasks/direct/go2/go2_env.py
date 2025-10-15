@@ -253,6 +253,7 @@ class Go2Env(DirectRLEnv):
         self._commands[env_ids] = torch.cat([rand_x, rand_y, rand_yaw], dim=1)
         self._episode_commands[env_ids] = self._commands[env_ids] # 지금 막 샘플링한 속도 명령(self._commands[env_ids])을 그대로 _episode_commands 버퍼에 복사해 두는 역할. 이렇게 저장해 둬야 에피소드가 끝날 때 “이 환경은 어떤 속도를 명령받았었나?”를 알 수 있고, 그 값을 이용해 기대 이동 거리(expected_distance)를 계산해서 커리큘럼 강등 여부를 판단
 
+
         # ## THIS IS FOR PLAYING
         # '''
         # # 고정된 x방향 속도로만 이동 (2.5 m/s)
@@ -263,14 +264,14 @@ class Go2Env(DirectRLEnv):
         # '''
         # # 턴하면서 빠르게 이동
         # fixed_x = torch.ones(num_resets, 1,
-        # device=self.device) * 3.0   # x방향 3.0 m/s
+        # device=self.device) * 1.0   # x방향 1.0 m/s
         # fixed_y = torch.zeros(num_resets, 1,
         # device=self.device)        # y방향 0.0 m/s
         # fixed_yaw = torch.ones(num_resets, 1,
-        # device=self.device) * 2.0  # yaw 2.0 rad/s
+        # device=self.device) * 0.0  # yaw 0.0 rad/s
         # self._commands[env_ids] = torch.cat([fixed_x,
         # fixed_y, fixed_yaw], dim=1)        
-        
+        # self._episode_commands[env_ids] = self._commands[env_ids] # 지금 막 샘플링한 속도 명령(self._commands[env_ids])을 그대로 _episode_commands 버퍼에 복사해 두는 역할. 이렇게 저장해 둬야 에피소드가 끝날 때 “이 환경은 어떤 속도를 명령받았었나?”를 알 수 있고, 그 값을 이용해 기대 이동 거리(expected_distance)를 계산해서 커리큘럼 강등 여부를 판단
         ######################################################################################################
         
         # Reset robot state
