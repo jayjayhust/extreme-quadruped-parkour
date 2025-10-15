@@ -30,6 +30,9 @@ class Go2Env(DirectRLEnv):
 
         # X/Y linear velocity and yaw angular velocity commands
         self._commands = torch.zeros(self.num_envs, 3, device=self.device)
+        # Store command history and episode start poses for curriculum progression
+        self._episode_commands = torch.zeros_like(self._commands)
+        self._episode_start_pos = torch.zeros(self.num_envs, 3, device=self.device) # episode가 끝나는 시점에서의 로봇의 현재 위치와, episode 시작점 사이의 거리를 통해 episode내에서 로봇이 얼만큼 걸었나를 판별 -> 이 실제 이동한 거리값을 기준으로 커리큘럼 승급/강등 여부 판단
 
         # Logging
         self._episode_sums = {
@@ -197,6 +200,31 @@ class Go2Env(DirectRLEnv):
     def _reset_idx(self, env_ids: torch.Tensor | None):
         if env_ids is None or len(env_ids) == self.num_envs:
             env_ids = self._robot._ALL_INDICES
+
+        curriculum_log: dict[str, float] = dict()
+        if (
+            isinstance(self.cfg, Go2RoughEnvCfg)
+            and getattr(self._terrain, "terrain_origins", None) is not None
+        ):
+            prev_mask = self.progress_buf[env_ids] > 0 # progress_buf는 0이면 막 리셋돼서 아직 한 발도 떼지 않은 에피소드 시작점 -> buffer updates at "(episode_length_buf += 1) at source/isaaclab/isaaclab/envs/direct_rl_env.py:368."
+            if torch.any(prev_mask): # prev_mask에 최소한 한 요소라도 0보다 크면
+                prev_env_ids = env_ids[prev_mask]
+                current_pos = self._robot.data.root_link_pose_w[prev_env_ids, :3]
+                start_pos = self._episode_start_pos[prev_env_ids]
+                distance = torch.norm(current_pos[:, :2] - start_pos[:, :2], dim=1)
+                terrain_length = self.cfg.terrain.terrain_generator.size[0] # 거친 지형 생성 설정에서 정의한 size 튜플의 첫 번째 값(= x 방향 길이)을 가져오는 줄. Rough terrain config에서는 size=(8.0, 8.0)으로 되어 있으니 size[0]은 각 서브 지형이 앞뒤로 8 m라는 뜻. 이 값을 써서 “지형 길이의 절반(=4 m)보다 더 멀리 걸었는가?”를 승급 조건으로.
+                move_up = distance > (terrain_length * 0.5)
+                prev_commands = self._episode_commands[prev_env_ids]
+                command_speed = torch.norm(prev_commands[:, :2], dim=1)
+                expected_distance = command_speed * self.max_episode_length_s # “명령을 끝까지 정확히 따라갔다면 이 에피소드에서 총 얼마를 이동했을 것이다”라는 이상적인 이동 거리를 계산하는 식.이 기대치의 절반 미만으로 실제 이동이 끝나면(move_down) 명령을 잘 수행하지 못했다고 보고 난이도를 낮추는 근거로 삼음.
+                move_down = (distance < (expected_distance * 0.5)) & (~move_up)
+                self._terrain.update_env_origins(prev_env_ids, move_up, move_down) # source/isaaclab/isaaclab/terrains/terrain_importer.py의 update_env_origins 함수 참고
+
+                # 평균 지형 레벨 값을 Tensorboard 같은 로거에서 바로 볼 수 있게.
+                curriculum_log["Curriculum/mean_terrain_level"] = torch.mean(
+                    self._terrain.terrain_levels.float()
+                ).item()
+
         self._robot.reset(env_ids)
         super()._reset_idx(env_ids)
         if len(env_ids) == self.num_envs:
@@ -223,6 +251,7 @@ class Go2Env(DirectRLEnv):
         rand_yaw = (torch.rand(num_resets, 1, device=self.device) * (ang_vel_range[1] - ang_vel_range[0])) + ang_vel_range[0]
 
         self._commands[env_ids] = torch.cat([rand_x, rand_y, rand_yaw], dim=1)
+        self._episode_commands[env_ids] = self._commands[env_ids] # 지금 막 샘플링한 속도 명령(self._commands[env_ids])을 그대로 _episode_commands 버퍼에 복사해 두는 역할. 이렇게 저장해 둬야 에피소드가 끝날 때 “이 환경은 어떤 속도를 명령받았었나?”를 알 수 있고, 그 값을 이용해 기대 이동 거리(expected_distance)를 계산해서 커리큘럼 강등 여부를 판단
 
         # ## THIS IS FOR PLAYING
         # '''
@@ -252,6 +281,8 @@ class Go2Env(DirectRLEnv):
         self._robot.write_root_pose_to_sim(default_root_state[:, :7], env_ids)
         self._robot.write_root_velocity_to_sim(default_root_state[:, 7:], env_ids)
         self._robot.write_joint_state_to_sim(joint_pos, joint_vel, None, env_ids)
+        self._episode_start_pos[env_ids] = default_root_state[:, :3] # 이렇게 초기 좌표를 기록해 둬야 에피소드가 끝날 때 current_pos - start_pos로 실제 이동 거리를 계산할 수 있음.
+
         # Logging
         extras = dict()
         for key in self._episode_sums.keys():
@@ -264,3 +295,5 @@ class Go2Env(DirectRLEnv):
         extras["Episode_Termination/base_contact"] = torch.count_nonzero(self.reset_terminated[env_ids]).item()
         extras["Episode_Termination/time_out"] = torch.count_nonzero(self.reset_time_outs[env_ids]).item()
         self.extras["log"].update(extras)
+        if curriculum_log:
+            self.extras["log"].update(curriculum_log)
