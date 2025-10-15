@@ -206,7 +206,7 @@ class Go2Env(DirectRLEnv):
             isinstance(self.cfg, Go2RoughEnvCfg)
             and getattr(self._terrain, "terrain_origins", None) is not None
         ):
-            prev_mask = self.progress_buf[env_ids] > 0 # progress_buf는 0이면 막 리셋돼서 아직 한 발도 떼지 않은 에피소드 시작점 -> buffer updates at "(episode_length_buf += 1) at source/isaaclab/isaaclab/envs/direct_rl_env.py:368."
+            prev_mask = self.episode_length_buf[env_ids] > 0 # episode_length_buf는 0이면 막 리셋돼서 아직 한 발도 떼지 않은 에피소드 시작점 -> buffer updates at "(episode_length_buf += 1) at source/isaaclab/isaaclab/envs/direct_rl_env.py:368."
             if torch.any(prev_mask): # prev_mask에 최소한 한 요소라도 0보다 크면
                 prev_env_ids = env_ids[prev_mask]
                 current_pos = self._robot.data.root_link_pose_w[prev_env_ids, :3]
