@@ -157,9 +157,24 @@ class Go2Env(DirectRLEnv):
         # base_height = torch.mean(self.base_pos[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
         # rew_base_height = torch.square(base_height - self.cfg.rewards.base_height_target)
         
-        base_height = torch.mean(self._robot.data.root_link_pose_w[:, 2].unsqueeze(1) , dim=1)
-        # print(base_height[0])  # 대걸님이 debug용으로 넣은 코드인듯
-        rew_base_height = torch.square(base_height - 0.3)
+        base_height_world = self._robot.data.root_link_pose_w[:, 2]
+        if isinstance(self.cfg, Go2RoughEnvCfg):
+            ray_hits = self._height_scanner.data.ray_hits_w[..., 2]
+            valid_hits = torch.isfinite(ray_hits)
+            valid_counts = valid_hits.sum(dim=1)
+            sum_hits = torch.where(valid_hits, ray_hits, torch.zeros_like(ray_hits)).sum(dim=1)
+            mean_ground_height = torch.where(
+                valid_counts > 0,
+                sum_hits / torch.clamp(valid_counts, min=1).to(ray_hits.dtype),
+                self._terrain.env_origins[:, 2]
+                if getattr(self._terrain, "env_origins", None) is not None
+                else torch.zeros_like(base_height_world),
+            )
+            relative_base_height = base_height_world - mean_ground_height
+        else:
+            relative_base_height = base_height_world
+
+        rew_base_height = torch.square(relative_base_height - 0.3)
         rew_torque = torch.sum(self._robot.data.applied_torque, dim=1)
         rew_dof_close_to_default = torch.sum(
             torch.square(self._robot.data.joint_pos - self._robot.data.default_joint_pos), dim=1
