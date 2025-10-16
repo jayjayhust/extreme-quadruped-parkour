@@ -154,7 +154,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
 
     # Test2 reward scales (override from flat config)
     base_height_reward_scale = -2.0 # Rough Terrain에서는 낮추는게 더 좋음(학습되는거 보고 -1.0혹은 -0.5로 바꿔야할수도).
-    flat_orientation_reward_scale = 0.0 # 험지니까 몸이 엄청 기울거라서    
+    flat_orientation_reward_scale = 0.0 # 험지니까 몸이 엄청 기울거라서
     feet_air_time_reward_scale = 0.5 # Test2에서는 더 작게
     lin_vel_reward_scale = 5.0 # Test2에서는 더 크게
     yaw_rate_reward_scale = 1.0 # Test2에서는 더 작게
