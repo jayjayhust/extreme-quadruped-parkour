@@ -242,7 +242,7 @@ class Go2Env(DirectRLEnv):
                 prev_commands = self._episode_commands[prev_env_ids]
                 command_speed = torch.norm(prev_commands[:, :2], dim=1)
                 expected_distance = command_speed * self.max_episode_length_s # “명령을 끝까지 정확히 따라갔다면 이 에피소드에서 총 얼마를 이동했을 것이다”라는 이상적인 이동 거리를 계산하는 식.이 기대치의 절반 미만으로 실제 이동이 끝나면(move_down) 명령을 잘 수행하지 못했다고 보고 난이도를 낮추는 근거로 삼음.
-                move_down = (distance < (expected_distance * 0.5)) & (~move_up)
+                move_down = (distance < (expected_distance * 0.3)) & (~move_up) # 강등 조건 계수를 수정함_25_10_18_Yobel
                 self._terrain.update_env_origins(prev_env_ids, move_up, move_down) # source/isaaclab/isaaclab/terrains/terrain_importer.py의 update_env_origins 함수 참고
 
                 # 평균 지형 레벨 값을 Tensorboard 같은 로거에서 바로 볼 수 있게.
