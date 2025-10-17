@@ -34,6 +34,15 @@ class Go2Env(DirectRLEnv):
         self._episode_commands = torch.zeros_like(self._commands)
         self._episode_start_pos = torch.zeros(self.num_envs, 3, device=self.device) # episode가 끝나는 시점에서의 로봇의 현재 위치와, episode 시작점 사이의 거리를 통해 episode내에서 로봇이 얼만큼 걸었나를 판별 -> 이 실제 이동한 거리값을 기준으로 커리큘럼 승급/강등 여부 판단
 
+        ## Training/Playing 모드 전환을 유연하게 하려고 추가한 플래그 ##
+        ### switches for curriculum updates and command sampling
+        self._use_curriculum = getattr(self.cfg, "use_curriculum", True)
+        self._command_mode = getattr(self.cfg, "command_mode", "random")
+        fixed_command_cfg = torch.tensor(
+            getattr(self.cfg, "fixed_command", (1.0, 0.0, 0.0)), device=self.device, dtype=torch.float
+        )
+        self._fixed_command = fixed_command_cfg.unsqueeze(0)
+
         # Logging
         self._episode_sums = {
             key: torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
@@ -220,6 +229,7 @@ class Go2Env(DirectRLEnv):
         if (
             isinstance(self.cfg, Go2RoughEnvCfg)
             and getattr(self._terrain, "terrain_origins", None) is not None
+            and self._use_curriculum
         ):
             prev_mask = self.episode_length_buf[env_ids] > 0 # episode_length_buf는 0이면 막 리셋돼서 아직 한 발도 떼지 않은 에피소드 시작점 -> buffer updates at "(episode_length_buf += 1) at source/isaaclab/isaaclab/envs/direct_rl_env.py:368."
             if torch.any(prev_mask): # prev_mask에 최소한 한 요소라도 0보다 크면
@@ -254,19 +264,32 @@ class Go2Env(DirectRLEnv):
         # 각각 random sampling 구현 ###########################################################################
         num_resets = len(env_ids)
 
+        ## Training/Playing 모드 전환을 유연하게 하려고 추가한 플래그 ##
+        ### Training Mode: 디폴트는 random sampling
+        ### Playing Mode: 디폴트는 fixed command
+        if self._command_mode == "random":
+            lin_x_range = [-1.0, 1.0]
+            rand_x = (
+                torch.rand(num_resets, 1, device=self.device) * (lin_x_range[1] - lin_x_range[0])
+            ) + lin_x_range[0]
 
-        ## THIS IS FOR TRAINING
-        lin_x_range = [-1.0, 1.0]
-        rand_x = (torch.rand(num_resets, 1, device=self.device) * (lin_x_range[1] - lin_x_range[0])) + lin_x_range[0]
+            lin_y_range = [-1.0, 1.0]
+            rand_y = (
+                torch.rand(num_resets, 1, device=self.device) * (lin_y_range[1] - lin_y_range[0])
+            ) + lin_y_range[0]
 
-        lin_y_range = [-1.0, 1.0]
-        rand_y = (torch.rand(num_resets, 1, device=self.device) * (lin_y_range[1] - lin_y_range[0])) + lin_y_range[0]
+            ang_vel_range = [-1.0, 1.0]
+            rand_yaw = (
+                torch.rand(num_resets, 1, device=self.device) * (ang_vel_range[1] - ang_vel_range[0])
+            ) + ang_vel_range[0]
 
-        ang_vel_range = [-1.0, 1.0]
-        rand_yaw = (torch.rand(num_resets, 1, device=self.device) * (ang_vel_range[1] - ang_vel_range[0])) + ang_vel_range[0]
+            self._commands[env_ids] = torch.cat([rand_x, rand_y, rand_yaw], dim=1)
+        elif self._command_mode == "fixed":
+            self._commands[env_ids] = self._fixed_command.expand(num_resets, -1)
+        else:
+            raise ValueError(f"Unsupported command mode: {self._command_mode}")
 
-        self._commands[env_ids] = torch.cat([rand_x, rand_y, rand_yaw], dim=1)
-        self._episode_commands[env_ids] = self._commands[env_ids] # 지금 막 샘플링한 속도 명령(self._commands[env_ids])을 그대로 _episode_commands 버퍼에 복사해 두는 역할. 이렇게 저장해 둬야 에피소드가 끝날 때 “이 환경은 어떤 속도를 명령받았었나?”를 알 수 있고, 그 값을 이용해 기대 이동 거리(expected_distance)를 계산해서 커리큘럼 강등 여부를 판단
+        self._episode_commands[env_ids] = self._commands[env_ids]
 
 
         # ## THIS IS FOR PLAYING

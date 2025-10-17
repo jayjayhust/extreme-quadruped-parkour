@@ -113,6 +113,12 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     stop_penalty_reward_scale = 0.0
     dof_close_to_default_reward_scale = -0.05
 
+    # Training/Playing 모드 전환을 유연하게 하려고 추가한 플래그 
+    ## command / curriculum settings (overridden by rough configs as needed)
+    command_mode: str = "random"  # "random" or "fixed"
+    fixed_command: tuple[float, float, float] = (1.0, 0.0, 0.0)
+    use_curriculum: bool = True
+
 
 @configclass
 class Go2RoughEnvCfg(Go2FlatEnvCfg):
@@ -167,4 +173,25 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     torque_reward_scale = 0.0
     stop_penalty_reward_scale = 0.0
     dof_close_to_default_reward_scale = -0.05
+
+    # keep curriculum active and random commands for training
+    command_mode: str = "random"
+    use_curriculum: bool = True
+
+
+@configclass
+class Go2RoughPlayEnvCfg(Go2RoughEnvCfg):
+    """Evaluation configuration for Go2 rough terrain."""
+
+    # disable curriculum updates so difficulty stays fixed per reset
+    use_curriculum: bool = False
+
+    # run with fixed velocity commands during playbacks
+    command_mode: str = "fixed"
+    fixed_command: tuple[float, float, float] = (1.0, 0.0, 0.0)
+
+    # generate a different random rough terrain by changing the seed and disabling curriculum in generator
+    terrain = Go2RoughEnvCfg().terrain.replace(
+        terrain_generator=ROUGH_TERRAINS_CFG.replace(curriculum=False, seed=424242)
+    )
 

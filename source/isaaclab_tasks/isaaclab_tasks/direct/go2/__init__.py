@@ -34,3 +34,14 @@ gym.register(
         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:Go2RoughPPORunnerCfg",
     },
 )
+
+# Playing Mode: Gym에 새로운 환경 ID인 Go2-Rough-Direct-Play-v0를 등록하는 코드
+gym.register(
+    id="Go2-Rough-Direct-Play-v0",
+    entry_point=f"{__name__}.go2_env:Go2Env",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.go2_env_cfg:Go2RoughPlayEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:Go2RoughPPORunnerCfg",
+    },
+)
