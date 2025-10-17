@@ -265,7 +265,7 @@ class Go2Env(DirectRLEnv):
         num_resets = len(env_ids)
 
         ## Training/Playing 모드 전환을 유연하게 하려고 추가한 플래그 ##
-        ### Training Mode: 디폴트는 random sampling
+        ### Training Mode: 디폴트는 random sampling - random command 숫자 바꾸려면 여기 수정
         ### Playing Mode: 디폴트는 fixed command
         if self._command_mode == "random":
             lin_x_range = [-1.0, 1.0]

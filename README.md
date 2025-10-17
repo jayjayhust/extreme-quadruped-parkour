@@ -38,27 +38,59 @@ pip install -e source/isaaclab_tasks
 
 #### Training unitree GO2
 ##### 기본 학습: reset idx 안 바꾸면, 매 episode마다 다른 속도 명령을 줘서 학습 -> 전진, 후진, 좌우, 회전 등 모든 움직임 학습
-> 기본 학습 명령어(만마리 학습)
+> Flat Terrain 기본 학습 명령어(예: 만마리 학습): Random Command
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task=Go2-Direct-v0 --headless --num_envs 10000
 ```
-> Rough Terrain 학습 명령어
+> Flat Terrain에서 fixed command로 학습
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 10000
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Direct-v0 --headless --num_envs 2048 env.command_mode=fixed env.fixed_command='[1.0,0.0,0.0]'
+```
+> **Rough Terrain 기본 학습 명령어(예: 2048마리 학습): Random Command** : Random Command 숫자는 go2_env.py에서 바꿔야 함.
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048
+```
+> **Rough Terrain에서 fixed command로 학습 (커리큘럼 유지, 단 고정 명령)**
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 env.command_mode=fixed env.fixed_command='[1.0,0.0,0.0]'
 ```
 
-##### 고정 Command를 줘서 학습하는법
-```python
-# go2_env.py의 _reset_idx 메서드 수정
-def _reset_idx(self, env_ids: torch.Tensor | None):
-    # ... 기존 코드 ...
-    
-    # 고정 명령 설정
-    fixed_command = torch.tensor([1.0, 0.0, 0.0], device=self.device)  # [x_vel, y_vel, yaw_rate]
-    self._commands[env_ids] = fixed_command.expand(len(env_ids), 3)
+
+#### Playing unitree GO2
+##### Flat Terrain Playing
+> 고정 커맨드로 Play
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Direct-v0 --num_envs 10 env.command_mode=fixed
 ```
-##### Tensorboard로 학습 확인
-###### Flat Terrain
+> 특정 model.pt 파일 돌리고 싶을 때
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Direct-v0 env.command_mode=fixed --checkpoint logs/rsl_rl/go2_flat_direct/2025-09-26_15-00-56/model_4999.pt
+```
+> 랜덤 커맨드로 플레이
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Direct-v0 --num_envs 10
+```
+
+###### Rough Terrain Playing
+> 기본 명령어: fixed command + curriculum off, 다른 무작위 지형
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10
+```
+> 특정 model.pt 파일 돌리고 싶을 때
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10 --checkpoint logs/rsl_rl/go2_flat_direct/2025-09-26_15-00-56/model_4999.pt
+```
+> 변형: random command로 테스트
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10 env.command_mode=random
+```
+> 변형: fixed command, 학습에서 사용했던 승급/강등 환경 그대로 
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 10 env.command_mode=fixed env.fixed_command='[1.0,0.0,0.0]'
+```
+
+#### Tensorboard로 학습 확인
+##### Flat Terrain
 ```bash
 tensorboard --logdir logs/rsl_rl/go2_flat_direct
 ```
@@ -68,28 +100,13 @@ tensorboard --logdir logs/rsl_rl/go2_flat_direct/2025-09-26_22-02-15/ --host 0.0
 ```
 > 참고: Tensorboard에 필요한 모든 데이터 정보는 아래 경로에 있음(이 파일 가지고 그래프를 그리는것임).
 logs/rsl_rl/go2_flat_direct/2025-09-26_22-02-15/events.out.tfevents.1758891741.yobel-desktop.453323.0
-###### Rough Terrain
+##### Rough Terrain
 ```bash
 tensorboard --logdir logs/rsl_rl/go2_rough_direct
 ```
 OR
 ```bash
 tensorboard --logdir logs/rsl_rl/go2_rough_direct/2025-09-26_22-02-15/ --host 0.0.0.0 --port 6006
-```
-
-#### Playing unitree GO2
-> 참고: 내가 주고 싶은 command로 가게 하고 싶으면, reset idx에서 학습에 적어놓은거처럼, command fix하기
-```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Direct-v0 --num_envs 10
-```
-> 특정 model.pt 파일 돌리고 싶을 때
-```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Direct-v0 --checkpoint logs/rsl_rl/go2_flat_direct/2025-09-26_15-00-56/model_4999.pt
-```
-> Rough Terrain Playing
-> Rough Terrain 학습 명령어
-```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 1
 ```
 
 #### Infos
