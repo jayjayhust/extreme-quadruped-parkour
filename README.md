@@ -76,9 +76,9 @@ pip install -e source/isaaclab_tasks
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10
 ```
-> 특정 model.pt 파일 돌리고 싶을 때
+> 특정 model.pt 파일 돌리고 싶을 때 + 48초 길이의 비디오 녹화
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10 --checkpoint logs/rsl_rl/go2_flat_direct/2025-09-26_15-00-56/model_4999.pt
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10 --checkpoint logs/rsl_rl/go2_flat_direct/2025-09-26_15-00-56/model_4999.pt --video --video_length 2400
 ```
 > 변형: random command로 테스트
 ```bash
