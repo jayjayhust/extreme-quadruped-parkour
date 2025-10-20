@@ -241,11 +241,11 @@ class Go2Env(DirectRLEnv):
                 start_pos = self._episode_start_pos[prev_env_ids]
                 distance = torch.norm(current_pos[:, :2] - start_pos[:, :2], dim=1)
                 terrain_length = self.cfg.terrain.terrain_generator.size[0] # 거친 지형 생성 설정에서 정의한 size 튜플의 첫 번째 값(= x 방향 길이)을 가져오는 줄. Rough terrain config에서는 size=(8.0, 8.0)으로 되어 있으니 size[0]은 각 서브 지형이 앞뒤로 8 m라는 뜻. 이 값을 써서 “지형 길이의 절반(=4 m)보다 더 멀리 걸었는가?”를 승급 조건으로.
-                move_up = distance > (terrain_length * 0.3)
+                move_up = distance > (terrain_length * 0.15) # 0.3 -> 0.15 - 25_10_21_Yobel Edit
                 prev_commands = self._episode_commands[prev_env_ids]
                 command_speed = torch.norm(prev_commands[:, :2], dim=1)
                 expected_distance = command_speed * self.max_episode_length_s # “명령을 끝까지 정확히 따라갔다면 이 에피소드에서 총 얼마를 이동했을 것이다”라는 이상적인 이동 거리를 계산하는 식.이 기대치의 절반 미만으로 실제 이동이 끝나면(move_down) 명령을 잘 수행하지 못했다고 보고 난이도를 낮추는 근거로 삼음.
-                move_down = (distance < (expected_distance * 0.3)) & (~move_up) # 강등 조건 계수를 수정함_25_10_18_Yobel
+                move_down = (distance < (expected_distance * 0.15)) & (~move_up) # 0.3 -> 0.15 - 25_10_21_Yobel Edit
                 self._terrain.update_env_origins(prev_env_ids, move_up, move_down) # source/isaaclab/isaaclab/terrains/terrain_importer.py의 update_env_origins 함수 참고
 
                 # 평균 지형 레벨 값을 Tensorboard 같은 로거에서 바로 볼 수 있게.
