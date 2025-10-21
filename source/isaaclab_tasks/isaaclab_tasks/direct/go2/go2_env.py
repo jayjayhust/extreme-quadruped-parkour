@@ -253,6 +253,29 @@ class Go2Env(DirectRLEnv):
                     self._terrain.terrain_levels.float()
                 ).item()
 
+        elif isinstance(self.cfg, Go2RoughEnvCfg) and getattr(self._terrain, "terrain_origins", None) is not None:
+            # Curriculum off: randomize both terrain level (row) and type (column) per reset for broader coverage.
+            new_levels = torch.randint(
+                0,
+                self._terrain.max_terrain_level,
+                (len(env_ids),),
+                device=self.device,
+            )
+            num_types = self._terrain.terrain_origins.shape[1]
+            new_types = torch.randint(0, num_types, (len(env_ids),), device=self.device)
+            self._terrain.terrain_levels[env_ids] = new_levels
+            self._terrain.terrain_types[env_ids] = new_types
+            self._terrain.env_origins[env_ids] = self._terrain.terrain_origins[new_levels, new_types]
+
+            # # Debugging: 샘플링된 지형 레벨과 타입 확인
+            # preview = min(5, len(env_ids)) # 로그를 출력할 때 다 보이면 너무 많으니, 최대 5개만 보여줌.
+            # print(
+            #     "[Go2Env] Curriculum disabled reset → sampled levels",
+            #     new_levels[:preview].detach().cpu().tolist(),
+            #     "types",
+            #     new_types[:preview].detach().cpu().tolist(),
+            # )
+
         self._robot.reset(env_ids)
         super()._reset_idx(env_ids)
         if len(env_ids) == self.num_envs:

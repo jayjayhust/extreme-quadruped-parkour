@@ -54,6 +54,10 @@ pip install -e source/isaaclab_tasks
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 env.command_mode=fixed env.fixed_command='[0.5,0.0,0.0]'
 ```
+>**Rought Terrain 변형: 커리큘럼 끄고, random command, resetidx에서 random하게 spawn되도록 코드 수정_25_10_21**
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task=Go2-Rough-Direct-v0 --headless --num_envs 5000 env.use_curriculum=False
+```
 
 
 #### Playing unitree GO2
