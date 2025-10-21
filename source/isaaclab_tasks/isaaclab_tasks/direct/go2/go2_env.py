@@ -123,7 +123,7 @@ class Go2Env(DirectRLEnv):
         )
         observations = {"policy": obs}
 
-        print("angular velocity x/y: ", self._robot.data.root_ang_vel_b[0,2])
+        # print("angular velocity x/y: ", self._robot.data.root_ang_vel_b[0,2])
 
         return observations
 

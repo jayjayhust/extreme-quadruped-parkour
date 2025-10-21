@@ -52,7 +52,7 @@ pip install -e source/isaaclab_tasks
 ```
 > **Rough Terrain에서 fixed command로 학습 (커리큘럼 유지, 단 고정 명령)**
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 env.command_mode=fixed env.fixed_command='[1.0,0.0,0.0]'
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 env.command_mode=fixed env.fixed_command='[0.5,0.0,0.0]'
 ```
 
 
