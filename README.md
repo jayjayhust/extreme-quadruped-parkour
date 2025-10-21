@@ -76,11 +76,11 @@ pip install -e source/isaaclab_tasks
 ```
 
 ###### Rough Terrain Playing
-> 기본 명령어: fixed command + curriculum off, 다른 무작위 지형
+> 기본 명령어: **fixed command** + curriculum off, 다른 무작위 지형
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10
 ```
-> 특정 model.pt 파일 돌리고 싶을 때 + 48초 길이의 비디오 녹화
+> **fixed command** - 특정 model.pt 파일 돌리고 싶을 때 + 48초 길이의 비디오 녹화
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10 --checkpoint logs/rsl_rl/go2_flat_direct/2025-09-26_15-00-56/model_4999.pt --video --video_length 2400
 ```
@@ -88,9 +88,13 @@ pip install -e source/isaaclab_tasks
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10 env.command_mode=random
 ```
-> 변형: fixed command, 학습에서 사용했던 승급/강등 환경 그대로 
+> 변형: **fixed command**, 학습에서 사용했던 승급/강등 환경 그대로 
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 10 env.command_mode=fixed env.fixed_command='[1.0,0.0,0.0]'
+```
+> 변형: **fixed command**, 커리큘럼 끄고 무작위 환경에서 Play
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Rough-Direct-Play-v0 --num_envs=10 env.use_curriculum=False
 ```
 
 #### Tensorboard로 학습 확인
