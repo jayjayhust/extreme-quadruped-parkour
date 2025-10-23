@@ -3,6 +3,8 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+import math
+
 import isaaclab.envs.mdp as mdp
 import isaaclab.sim as sim_utils
 from isaaclab.assets import ArticulationCfg
@@ -118,6 +120,15 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     command_mode: str = "random"  # "random" or "fixed"
     fixed_command: tuple[float, float, float] = (1.0, 0.0, 0.0)
     use_curriculum: bool = True
+    heading_command: bool = False
+    heading_resample_time_s: float = 10.0
+    heading_control_stiffness: float = 0.5
+    rel_heading_envs: float = 1.0
+    rel_standing_envs: float = 0.02
+    command_heading_range: tuple[float, float] = (-math.pi, math.pi)
+    command_yaw_range: tuple[float, float] = (-1.0, 1.0)
+    command_log_interval: int = 0
+    command_log_env: int = 0
 
 
 @configclass
@@ -186,6 +197,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     # keep curriculum active and random commands for training
     command_mode: str = "random"
     use_curriculum: bool = True
+    heading_command: bool = True
 
 
 @configclass

@@ -12,6 +12,7 @@ import isaaclab.sim as sim_utils
 from isaaclab.assets import Articulation
 from isaaclab.envs import DirectRLEnv
 from isaaclab.sensors import ContactSensor, RayCaster
+from isaaclab.utils.math import wrap_to_pi
 
 from .go2_env_cfg import Go2FlatEnvCfg, Go2RoughEnvCfg
 
@@ -42,6 +43,36 @@ class Go2Env(DirectRLEnv):
             getattr(self.cfg, "fixed_command", (1.0, 0.0, 0.0)), device=self.device, dtype=torch.float
         )
         self._fixed_command = fixed_command_cfg.unsqueeze(0)
+        self._use_heading_command = getattr(self.cfg, "heading_command", False)
+        if self._use_heading_command:
+            heading_range = torch.tensor(
+                getattr(self.cfg, "command_heading_range", (-torch.pi, torch.pi)),
+                device=self.device,
+                dtype=torch.float,
+            )
+            yaw_limits = torch.tensor(
+                getattr(self.cfg, "command_yaw_range", (-1.0, 1.0)),
+                device=self.device,
+                dtype=torch.float,
+            )
+            self._heading_range = heading_range
+            self._yaw_limits = yaw_limits
+            self._heading_min = float(heading_range[0].item())
+            self._heading_max = float(heading_range[1].item())
+            self._yaw_min = float(yaw_limits[0].item())
+            self._yaw_max = float(yaw_limits[1].item())
+            resample_time = getattr(self.cfg, "heading_resample_time_s", 10.0)
+            self._heading_resample_steps = max(1, int(resample_time / self.step_dt))
+            self._heading_control_stiffness = getattr(self.cfg, "heading_control_stiffness", 0.5)
+            self._rel_heading_envs = getattr(self.cfg, "rel_heading_envs", 1.0)
+            self._rel_standing_envs = getattr(self.cfg, "rel_standing_envs", 0.02)
+            self._heading_targets = torch.zeros(self.num_envs, device=self.device, dtype=torch.float)
+            self._heading_timer = torch.zeros(self.num_envs, device=self.device, dtype=torch.long)
+            self._is_heading_env = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
+            self._standing_env = torch.zeros(self.num_envs, device=self.device, dtype=torch.bool)
+        self._command_log_interval = int(getattr(self.cfg, "command_log_interval", 0))
+        self._command_log_env = int(getattr(self.cfg, "command_log_env", 0))
+        self._command_log_step = 0
 
         # Logging
         self._episode_sums = {
@@ -91,11 +122,64 @@ class Go2Env(DirectRLEnv):
         light_cfg.func("/World/Light", light_cfg)
 
     def _pre_physics_step(self, actions: torch.Tensor):
+        self._update_heading_command()
+        if not self._use_heading_command:
+            self._maybe_log_commands()
         self._actions = actions.clone()
         self._processed_actions = self.cfg.action_scale * self._actions + self._robot.data.default_joint_pos
 
     def _apply_action(self):
         self._robot.set_joint_position_target(self._processed_actions)
+
+    def _update_heading_command(self):
+        if not self._use_heading_command:
+            return
+
+        # advance resampling timer
+        self._heading_timer += 1
+
+        # resample heading targets for active heading environments
+        resample_mask = self._heading_timer >= self._heading_resample_steps
+        resample_mask &= self._is_heading_env
+        resample_mask &= ~self._standing_env
+        if torch.any(resample_mask):
+            env_ids = torch.nonzero(resample_mask, as_tuple=False).squeeze(-1)
+            self._heading_targets[env_ids] = torch.empty(len(env_ids), device=self.device).uniform_(
+                self._heading_min, self._heading_max
+            )
+            self._heading_timer[env_ids] = 0
+
+        heading_mask = self._is_heading_env & (~self._standing_env)
+        if torch.any(heading_mask):
+            env_ids = torch.nonzero(heading_mask, as_tuple=False).squeeze(-1)
+            heading_error = wrap_to_pi(self._heading_targets[env_ids] - self._robot.data.heading_w[env_ids])
+            yaw_command = torch.clamp(
+                self._heading_control_stiffness * heading_error, min=self._yaw_min, max=self._yaw_max
+            )
+            self._commands[env_ids, 2] = yaw_command
+
+        if torch.any(self._standing_env):
+            env_ids = torch.nonzero(self._standing_env, as_tuple=False).squeeze(-1)
+            self._commands[env_ids] = 0.0
+        self._maybe_log_commands()
+
+    def _maybe_log_commands(self):
+        if self._command_log_interval <= 0:
+            return
+        self._command_log_step += 1
+        if self._command_log_step % self._command_log_interval != 0:
+            return
+        env_id = self._command_log_env % self.num_envs
+        cmd = self._commands[env_id]
+        actual_lin = self._robot.data.root_lin_vel_b[env_id]
+        actual_yaw = self._robot.data.root_ang_vel_b[env_id, 2]
+        heading = self._robot.data.heading_w[env_id] if hasattr(self._robot.data, "heading_w") else torch.tensor(0.0)
+        print(
+            "[Go2Env] env"
+            f" {env_id}: cmd=({cmd[0].item():+.2f}, {cmd[1].item():+.2f}, {cmd[2].item():+.2f})"
+            f" | vel=({actual_lin[0].item():+.2f}, {actual_lin[1].item():+.2f})"
+            f" yaw={actual_yaw.item():+.2f} heading={heading.item():+.2f}"
+        )
 
     def _get_observations(self) -> dict:
         self._previous_actions = self._actions.clone()
@@ -304,7 +388,7 @@ class Go2Env(DirectRLEnv):
                 torch.rand(num_resets, 1, device=self.device) * (lin_y_range[1] - lin_y_range[0])
             ) + lin_y_range[0]
 
-            ang_vel_range = [-1.0, 1.0]
+            ang_vel_range = getattr(self.cfg, "command_yaw_range", (-1.0, 1.0))
             rand_yaw = (
                 torch.rand(num_resets, 1, device=self.device) * (ang_vel_range[1] - ang_vel_range[0])
             ) + ang_vel_range[0]
@@ -314,6 +398,29 @@ class Go2Env(DirectRLEnv):
             self._commands[env_ids] = self._fixed_command.expand(num_resets, -1)
         else:
             raise ValueError(f"Unsupported command mode: {self._command_mode}")
+
+        if self._use_heading_command:
+            self._heading_timer[env_ids] = 0
+            self._standing_env[env_ids] = False
+            self._is_heading_env[env_ids] = False
+
+            if num_resets > 0:
+                stand_mask = torch.rand(num_resets, device=self.device) < self._rel_standing_envs
+                if torch.any(stand_mask):
+                    stand_ids = env_ids[stand_mask]
+                    self._standing_env[stand_ids] = True
+                    self._commands[stand_ids] = 0.0
+
+                active_ids = env_ids[~stand_mask] if torch.any(stand_mask) else env_ids
+                if len(active_ids) > 0:
+                    heading_mask = torch.rand(len(active_ids), device=self.device) < self._rel_heading_envs
+                    if torch.any(heading_mask):
+                        heading_ids = active_ids[heading_mask]
+                        self._is_heading_env[heading_ids] = True
+                        self._heading_targets[heading_ids] = torch.empty(len(heading_ids), device=self.device).uniform_(
+                            self._heading_min, self._heading_max
+                        )
+                        self._commands[heading_ids, 2] = 0.0
 
         self._episode_commands[env_ids] = self._commands[env_ids]
 

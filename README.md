@@ -62,6 +62,10 @@ pip install -e source/isaaclab_tasks
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 --resume --load_run 2025-10-21_21-46-39 --checkpoint model_19999.pt --max_iterations 10000 env.use_curriculum=False
 ```
+> **Rough Terrain heading alignment(default): yaw 명령이 목표 heading을 추종하도록 활성화_25_10_23**
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 env.heading_command=True
+```
 
 #### Playing unitree GO2_direct_ours
 ##### Flat Terrain Playing
@@ -91,14 +95,19 @@ pip install -e source/isaaclab_tasks
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Play-v0 --num_envs 10 env.command_mode=random
 ```
-> 변형: **fixed command**, 학습에서 사용했던 승급/강등 환경 그대로 
-```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 10 env.command_mode=fixed env.fixed_command='[1.0,0.0,0.0]'
-```
 > 변형: **fixed command**, 커리큘럼 끄고 무작위 환경에서 Play
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Rough-Direct-Play-v0 --num_envs=10 env.use_curriculum=False
 ```
+> 변형: **fixed command**, 커리큘럼 킴: 학습에서 사용했던 승급/강등 환경 그대로_25_10_23
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 10 env.command_mode=fixed env.fixed_command='[1.0,0.0,0.0]' env.heading_command=False env.command_log_interval=50 env.command_log_env=0
+```
+> 변형: **fixed command**, heading도 키고 커리큘럼 킴: 학습에서 사용했던 승급/강등 환경 그대로_25_10_24
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 10 env.command_mode=fixed env.fixed_command='[0.5,0.0,0.0]' env.heading_command=True env.command_heading_range='[0.0,0.0]' env.heading_control_stiffness=3.0 env.command_yaw_range='[-0.15,0.15]' env.command_log_interval=50 env.command_log_env=0
+```
+
 
 #### Tensorboard로 학습 확인
 ##### Flat Terrain
