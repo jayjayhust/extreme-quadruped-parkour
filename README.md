@@ -129,16 +129,10 @@ tensorboard --logdir logs/rsl_rl/go2_rough_direct/2025-09-26_22-02-15/ --host 0.
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Isaac-Velocity-Rough-Unitree-Go2-v0 --num_envs 50
 ```
-> Playing in same training curriculum, Fixed Command (curriculum ON)
+> Playing in same training curriculum, Fixed Command (curriculum ON) -> 좀 랜덤하게 명령 주어지긴 함...
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
---task Isaac-Velocity-Rough-Unitree-Go2-v0 --num_envs 50 \
-env.commands.base_velocity.heading_command=False \
-env.commands.base_velocity.rel_standing_envs=0.0 \
-env.commands.base_velocity.resampling_time_range="[1000.0,1000.0]" \
-env.commands.base_velocity.ranges.lin_vel_x="[1.0,1.0]" \
-env.commands.base_velocity.ranges.lin_vel_y="[0.0,0.0]" \
-env.commands.base_velocity.ranges.ang_vel_z="[0.0,0.0]"
+--task Isaac-Velocity-Rough-Unitree-Go2-Play-v0 --num_envs 50
 ```
 > Playing in non training curriculum (curriculum OFF)
 ```bash
