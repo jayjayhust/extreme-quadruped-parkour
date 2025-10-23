@@ -36,7 +36,7 @@ cd /home/yobellee/Desktop/LAIR/Isaaclab_direct_go2
 pip install -e source/isaaclab_tasks
 ```
 
-#### Training unitree GO2
+#### Training unitree GO2_direct_ours
 ##### 기본 학습: reset idx 안 바꾸면, 매 episode마다 다른 속도 명령을 줘서 학습 -> 전진, 후진, 좌우, 회전 등 모든 움직임 학습
 > Flat Terrain 기본 학습 명령어(예: 만마리 학습): Random Command
 ```bash
@@ -63,7 +63,7 @@ pip install -e source/isaaclab_tasks
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 --resume --load_run 2025-10-21_21-46-39 --checkpoint model_19999.pt --max_iterations 10000 env.use_curriculum=False
 ```
 
-#### Playing unitree GO2
+#### Playing unitree GO2_direct_ours
 ##### Flat Terrain Playing
 > 고정 커맨드로 Play
 ```bash
@@ -119,6 +119,32 @@ OR
 ```bash
 tensorboard --logdir logs/rsl_rl/go2_rough_direct/2025-09-26_22-02-15/ --host 0.0.0.0 --port 6006
 ```
+
+#### Training & Playing unitree GO2_managerbased_from_IsaacLab
+> Training
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-Velocity-Rough-Unitree-Go2-v0 --headless --num_envs 2048
+```
+> Playing in same training curriculum (curriculum ON)
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Isaac-Velocity-Rough-Unitree-Go2-v0 --num_envs 50
+```
+> Playing in same training curriculum, Fixed Command (curriculum ON)
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
+--task Isaac-Velocity-Rough-Unitree-Go2-v0 --num_envs 50 \
+env.commands.base_velocity.heading_command=False \
+env.commands.base_velocity.rel_standing_envs=0.0 \
+env.commands.base_velocity.resampling_time_range="[1000.0,1000.0]" \
+env.commands.base_velocity.ranges.lin_vel_x="[1.0,1.0]" \
+env.commands.base_velocity.ranges.lin_vel_y="[0.0,0.0]" \
+env.commands.base_velocity.ranges.ang_vel_z="[0.0,0.0]"
+```
+> Playing in non training curriculum (curriculum OFF)
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Isaac-Velocity-Rough-Unitree-Go2-Play-v0 --num_envs 50 
+```
+
 
 #### Infos
 “std + action scale + clipping”이 합쳐져서
