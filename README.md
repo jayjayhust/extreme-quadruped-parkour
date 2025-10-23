@@ -50,7 +50,7 @@ pip install -e source/isaaclab_tasks
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048
 ```
-> **Rough Terrain에서 fixed command로 학습 (커리큘럼 유지, 단 고정 명령)**
+> **Rough Terrain 변형: fixed command로 학습 (커리큘럼 유지, 단 고정 명령)**
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 env.command_mode=fixed env.fixed_command='[0.5,0.0,0.0]'
 ```
@@ -128,11 +128,6 @@ tensorboard --logdir logs/rsl_rl/go2_rough_direct/2025-09-26_22-02-15/ --host 0.
 > Playing in same training curriculum (curriculum ON)
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Isaac-Velocity-Rough-Unitree-Go2-v0 --num_envs 50
-```
-> Playing in same training curriculum, Fixed Command (curriculum ON) -> 좀 랜덤하게 명령 주어지긴 함...
-```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
---task Isaac-Velocity-Rough-Unitree-Go2-Play-v0 --num_envs 50
 ```
 > Playing in non training curriculum (curriculum OFF)
 ```bash

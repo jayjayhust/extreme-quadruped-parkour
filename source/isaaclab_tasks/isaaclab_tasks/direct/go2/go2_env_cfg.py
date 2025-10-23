@@ -132,7 +132,16 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
         terrain_type="generator",
-        terrain_generator=ROUGH_TERRAINS_CFG,
+        terrain_generator=ROUGH_TERRAINS_CFG.replace(
+            sub_terrains={
+                **ROUGH_TERRAINS_CFG.sub_terrains,
+                "boxes": ROUGH_TERRAINS_CFG.sub_terrains["boxes"].replace(grid_height_range=(0.025, 0.1)),
+                "random_rough": ROUGH_TERRAINS_CFG.sub_terrains["random_rough"].replace(
+                    noise_range=(0.01, 0.06),
+                    noise_step=0.01,
+                ),
+            }
+        ),
         max_init_terrain_level=5, # 사수님이 9였다가 1로 바꾸심 -> 내가 5로 바꿈
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
@@ -158,10 +167,10 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
         mesh_prim_paths=["/World/ground"],
     )
 
-    # Test3 reward scales (override from flat config)
-    base_height_reward_scale = -1.0 # Test3에서는 더 작게
+    # Test4 reward scales (override from flat config)
+    base_height_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
     flat_orientation_reward_scale = 0.0 # 험지니까 몸이 엄청 기울거라서
-    feet_air_time_reward_scale = 0.25 # Test3에서는 더 작게
+    feet_air_time_reward_scale = 0.125 # Test4 (considering managerbased curriculum)
     lin_vel_reward_scale = 5.0 # Test2에서는 더 크게
     yaw_rate_reward_scale = 1.0 # Test2에서는 더 작게
     z_vel_reward_scale = -2.0
@@ -169,10 +178,10 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     joint_torque_reward_scale = -2.5e-5
     joint_accel_reward_scale = -2.5e-7
     action_rate_reward_scale = -0.01
-    undesired_contact_reward_scale = -0.0
+    undesired_contact_reward_scale = -0.8 # Test4 (considering managerbased curriculum)
     torque_reward_scale = 0.0
     stop_penalty_reward_scale = 0.0
-    dof_close_to_default_reward_scale = -0.05
+    dof_close_to_default_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
 
     # keep curriculum active and random commands for training
     command_mode: str = "random"
@@ -194,4 +203,3 @@ class Go2RoughPlayEnvCfg(Go2RoughEnvCfg):
     terrain = Go2RoughEnvCfg().terrain.replace(
         terrain_generator=ROUGH_TERRAINS_CFG.replace(curriculum=False, seed=424242)
     )
-
