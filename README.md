@@ -105,9 +105,8 @@ pip install -e source/isaaclab_tasks
 ```
 > 변형: **fixed command**, heading도 키고 커리큘럼 킴: 학습에서 사용했던 승급/강등 환경 그대로_25_10_24
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 10 env.command_mode=fixed env.fixed_command='[0.5,0.0,0.0]' env.heading_command=True env.command_heading_range='[0.0,0.0]' env.heading_control_stiffness=3.0 env.command_yaw_range='[-0.15,0.15]' env.command_log_interval=50 env.command_log_env=0
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 10 env.command_mode=fixed env.fixed_command='[0.5,0.0,0.0]' env.heading_command=True env.command_heading_range='[0.0,0.0]' env.heading_control_stiffness=3.0 env.command_yaw_range='[-0.15,0.15]' env.command_log_interval=50 env.command_log_env=0 env.rel_heading_envs=1.0 env.rel_standing_envs=0.0
 ```
-
 
 #### Tensorboard로 학습 확인
 ##### Flat Terrain
@@ -137,6 +136,31 @@ tensorboard --logdir logs/rsl_rl/go2_rough_direct/2025-09-26_22-02-15/ --host 0.
 > Playing in same training curriculum (curriculum ON)
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Isaac-Velocity-Rough-Unitree-Go2-v0 --num_envs 50
+```
+> Yaw제어허용
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
+--task Isaac-Velocity-Rough-Unitree-Go2-v0 --num_envs 100 \
+env.commands.base_velocity.ranges.lin_vel_x=[0.5,0.5] \
+env.commands.base_velocity.ranges.lin_vel_y=[0.0,0.0] \
+env.commands.base_velocity.ranges.ang_vel_z=[-0.5,0.5] \
+env.commands.base_velocity.ranges.heading=[0.0,0.0] \
+env.commands.base_velocity.heading_control_stiffness=2.0 \
+env.commands.base_velocity.rel_heading_envs=1.0 \
+env.commands.base_velocity.rel_standing_envs=0.0 \
+env.commands.base_velocity.resampling_time_range=[9999,9999]
+```
+> 초기 yaw 0 고정
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
+--task Isaac-Velocity-Rough-Unitree-Go2-v0 --num_envs 100 \
+env.commands.base_velocity.ranges.lin_vel_x=[1.0,1.0] \
+env.commands.base_velocity.ranges.lin_vel_y=[0.0,0.0] \
+env.commands.base_velocity.ranges.ang_vel_z=[0.0,0.0] \
+env.commands.base_velocity.ranges.heading=[0.0,0.0] \
+env.commands.base_velocity.rel_standing_envs=0.0 \
+env.commands.base_velocity.resampling_time_range=[9999,9999] \
+env.events.reset_base.params.pose_range.yaw=[0.0,0.0]
 ```
 > Playing in non training curriculum (curriculum OFF)
 ```bash
