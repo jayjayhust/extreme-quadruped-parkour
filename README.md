@@ -99,13 +99,13 @@ pip install -e source/isaaclab_tasks
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task=Go2-Rough-Direct-Play-v0 --num_envs=10 env.use_curriculum=False
 ```
-> 변형: **fixed command**, 커리큘럼 킴: 학습에서 사용했던 승급/강등 환경 그대로_25_10_23
+> 변형: **fixed command**, heading 끄고, 커리큘럼 킴: 학습에서 사용했던 승급/강등 환경 그대로_25_10_23
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 10 env.command_mode=fixed env.fixed_command='[1.0,0.0,0.0]' env.heading_command=False env.command_log_interval=50 env.command_log_env=0
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 50 env.command_mode=fixed env.fixed_command='[1.0,0.0,0.0]' env.heading_command=False env.command_log_interval=50 env.command_log_env=0
 ```
 > 변형: **fixed command**, heading도 키고 커리큘럼 킴: 학습에서 사용했던 승급/강등 환경 그대로_25_10_24
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 10 env.command_mode=fixed env.fixed_command='[0.5,0.0,0.0]' env.heading_command=True env.command_heading_range='[0.0,0.0]' env.heading_control_stiffness=3.0 env.command_yaw_range='[-0.15,0.15]' env.command_log_interval=50 env.command_log_env=0 env.rel_heading_envs=1.0 env.rel_standing_envs=0.0
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-v0 --num_envs 50 env.command_mode=fixed env.fixed_command='[0.5,0.0,0.0]' env.heading_command=True env.command_heading_range='[0.0,0.0]' env.heading_control_stiffness=3.0 env.command_yaw_range='[-0.15,0.15]' env.command_log_interval=50 env.command_log_env=0 env.rel_heading_envs=1.0 env.rel_standing_envs=0.0
 ```
 
 #### Tensorboard로 학습 확인
