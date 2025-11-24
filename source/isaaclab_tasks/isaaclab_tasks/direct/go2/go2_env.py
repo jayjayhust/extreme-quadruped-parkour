@@ -28,6 +28,14 @@ class Go2Env(DirectRLEnv):
         self._previous_actions = torch.zeros(
             self.num_envs, gym.spaces.flatdim(self.single_action_space), device=self.device
         )
+        # Domain randomization buffers for privileged obs
+        dof_dim = gym.spaces.flatdim(self.single_action_space)
+        self._p_gain_scale = torch.ones(self.num_envs, dof_dim, device=self.device)
+        self._d_gain_scale = torch.ones(self.num_envs, dof_dim, device=self.device)
+        self._dr_friction = torch.full((self.num_envs, 1), float(self.cfg.terrain.physics_material.static_friction), device=self.device)
+        self._dr_mass = torch.zeros(self.num_envs, 1, device=self.device)
+        self._dr_com = torch.zeros(self.num_envs, 3, device=self.device)
+        self._dr_initialized = torch.ones(self.num_envs, dtype=torch.bool, device=self.device)
 
         # X/Y linear velocity and yaw angular velocity commands
         self._commands = torch.zeros(self.num_envs, 3, device=self.device)
@@ -99,6 +107,71 @@ class Go2Env(DirectRLEnv):
         self._base_id, _ = self._contact_sensor.find_bodies("base")
         self._feet_ids, _ = self._contact_sensor.find_bodies(".*_foot")
         self._undesired_contact_body_ids, _ = self._contact_sensor.find_bodies(".*_thigh")
+        self._capture_dr_from_sim_once()
+        self._apply_friction_dr_once()
+
+    def _capture_dr_from_sim_once(self):
+        """Capture DR values from the simulation once after startup events."""
+        # mass and com
+        if getattr(self._robot.data, "default_mass", None) is not None:
+            self._dr_mass[:] = self._robot.data.default_mass[:, self._base_id].unsqueeze(1)
+        if getattr(self._robot.data, "body_com_pos_b", None) is not None:
+            self._dr_com[:] = self._robot.data.body_com_pos_b[:, self._base_id]
+
+        # PD gain scales: ratio of current actuator gains to defaults
+        if self._robot.actuators:
+            # assume uniform actuator on go2; take first actuator gains
+            actuator = next(iter(self._robot.actuators.values()))
+            # shape (num_envs, dof_per_actuator)
+            cur_stiffness = actuator.stiffness
+            cur_damping = actuator.damping
+            default_stiffness = self._robot.data.default_joint_stiffness[:, actuator.joint_indices]
+            default_damping = self._robot.data.default_joint_damping[:, actuator.joint_indices]
+            # avoid div by zero
+            stiff_scale = torch.ones_like(cur_stiffness)
+            damp_scale = torch.ones_like(cur_damping)
+            stiff_nonzero = torch.abs(default_stiffness) > 1e-6
+            damp_nonzero = torch.abs(default_damping) > 1e-6
+            stiff_scale[stiff_nonzero] = cur_stiffness[stiff_nonzero] / default_stiffness[stiff_nonzero]
+            damp_scale[damp_nonzero] = cur_damping[damp_nonzero] / default_damping[damp_nonzero]
+            # broadcast into full dof order
+            self._p_gain_scale[:, actuator.joint_indices] = stiff_scale
+            self._d_gain_scale[:, actuator.joint_indices] = damp_scale
+
+        # friction: keep as configured terrain friction (events are startup and not easily readable)
+        if hasattr(self.cfg.terrain, "physics_material"):
+            self._dr_friction[:] = float(self.cfg.terrain.physics_material.static_friction)
+
+    def _apply_friction_dr_once(self):
+        """Sample friction buckets and apply to robot shapes; mirror into _dr_friction."""
+        # parameters
+        static_range = (0.7, 1.4)
+        dynamic_range = (0.7, 1.4)
+        restitution_range = (0.0, 0.0)
+        num_buckets = 64
+
+        # sample buckets (CPU as PhysX API expects CPU tensors)
+        import torch
+
+        device_cpu = torch.device("cpu")
+        buckets = torch.empty((num_buckets, 3), device=device_cpu)
+        buckets[:, 0] = torch.rand(num_buckets, device=device_cpu) * (static_range[1] - static_range[0]) + static_range[0]
+        buckets[:, 1] = torch.rand(num_buckets, device=device_cpu) * (dynamic_range[1] - dynamic_range[0]) + dynamic_range[0]
+        buckets[:, 2] = torch.rand(num_buckets, device=device_cpu) * (restitution_range[1] - restitution_range[0]) + restitution_range[0]
+
+        # PhysX view and shape count
+        view = self._robot.root_physx_view
+        num_shapes = view.max_shapes
+        # current materials shape: (num_envs, num_shapes, 3)
+        materials = view.get_material_properties()
+        bucket_ids = torch.randint(0, num_buckets, (self.num_envs, num_shapes), device=device_cpu)
+        material_samples = buckets[bucket_ids]  # (num_envs, num_shapes, 3)
+        materials[:] = material_samples
+        view.set_material_properties(materials, None)
+
+        # store one representative friction per env for priv_obs (mean of assigned static friction)
+        static_friction = material_samples[:, :, 0]
+        self._dr_friction[:] = static_friction.mean(dim=1, keepdim=True).to(self.device)
 
     def _setup_scene(self):
         self._robot = Articulation(self.cfg.robot)
@@ -212,12 +285,19 @@ class Go2Env(DirectRLEnv):
         )
         observations = {"policy": prop_obs}
 
-        # priv_scan is scandot data(height_data)
+        # privileged obs (critic only): mass/com + friction + PD gain scales + optional scan
+        # use DR buffers to avoid mismatch with internal PhysX sampling
+        mass_com = torch.cat([self._dr_mass, self._dr_com], dim=1)  # 4D
+        friction_coeff = self._dr_friction
+
+        priv_obs = torch.cat([mass_com, friction_coeff, self._p_gain_scale, self._d_gain_scale], dim=-1)  # 29D
         if priv_scan is not None:
-            # privileged critic obs: proprio + height scan
-            observations["critic"] = torch.cat([prop_obs, priv_scan], dim=-1)
-        elif self.cfg.state_space:
-            observations["critic"] = prop_obs
+            priv_obs_and_scan = torch.cat([priv_obs, priv_scan], dim=-1)
+        else:
+            priv_obs_and_scan = priv_obs
+
+        # critic receives proprio + privileged (+ scan if available)
+        observations["critic"] = torch.cat([prop_obs, priv_obs_and_scan], dim=-1)
 
         # print("angular velocity x/y: ", self._robot.data.root_ang_vel_b[0,2])
 
@@ -382,8 +462,9 @@ class Go2Env(DirectRLEnv):
         # Sample new commands
         # 여기에서 command 처리할때 원래 크기는 envs, 3이라서 값이 이 샘플링을 통해 다 바뀌어버림.
         self._commands[env_ids] = torch.zeros_like(self._commands[env_ids]).uniform_(1.0, 1.0)
-        
+
         # 각각 random sampling 구현 ###########################################################################
+        # Domain randomization: sampled buffers for privileged obs
         num_resets = len(env_ids)
 
         ## Training/Playing 모드 전환을 유연하게 하려고 추가한 플래그 ##

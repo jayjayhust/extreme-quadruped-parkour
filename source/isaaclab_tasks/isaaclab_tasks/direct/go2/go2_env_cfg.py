@@ -28,25 +28,34 @@ from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG  # isort: skip
 class EventCfg:
     """Configuration for randomization."""
 
-    physics_material = EventTerm(
-        func=mdp.randomize_rigid_body_material,
-        mode="startup",
-        params={
-            "asset_cfg": SceneEntityCfg("robot", body_names=".*"),
-            "static_friction_range": (0.8, 0.8),
-            "dynamic_friction_range": (0.6, 0.6),
-            "restitution_range": (0.0, 0.0),
-            "num_buckets": 64,
-        },
-    )
-
     add_base_mass = EventTerm(
         func=mdp.randomize_rigid_body_mass,
         mode="startup",
         params={
             "asset_cfg": SceneEntityCfg("robot", body_names="base"),
-            "mass_distribution_params": (-1.0, 3.0),
+            "mass_distribution_params": (-1.0, 2.0),
             "operation": "add",
+        },
+    )
+
+    base_com = EventTerm(
+        func=mdp.randomize_rigid_body_com,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", body_names="base"),
+            "com_range": {"x": (-0.1, 0.1), "y": (-0.1, 0.1), "z": (-0.1, 0.1)},
+        },
+    )
+
+    randomize_pd = EventTerm(
+        func=mdp.randomize_actuator_gains,
+        mode="startup",
+        params={
+            "asset_cfg": SceneEntityCfg("robot", joint_names=".*"),
+            "stiffness_distribution_params": (0.9, 1.1),
+            "damping_distribution_params": (0.9, 1.1),
+            "distribution": "uniform",
+            "operation": "scale",
         },
     )
 
@@ -59,7 +68,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     action_scale = 0.25
     action_space = 12
     observation_space = 52
-    state_space = 0
+    state_space = 81  # 52 prop + 29 priv
 
     # simulation
     sim: SimulationCfg = SimulationCfg(
@@ -135,7 +144,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 class Go2RoughEnvCfg(Go2FlatEnvCfg):
     # env
     observation_space = 52
-    state_space = 239
+    state_space = 268  # 52 prop + 29 priv + 187 scan
 
     sim: SimulationCfg = Go2FlatEnvCfg().sim.replace(
         physx=Go2FlatEnvCfg().sim.physx.replace(gpu_max_rigid_patch_count=12 * 2**15)
