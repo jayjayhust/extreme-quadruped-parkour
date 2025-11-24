@@ -183,29 +183,41 @@ class Go2Env(DirectRLEnv):
 
     def _get_observations(self) -> dict:
         self._previous_actions = self._actions.clone()
+
         height_data = None
         if isinstance(self.cfg, Go2RoughEnvCfg):
             height_data = (
                 self._height_scanner.data.pos_w[:, 2].unsqueeze(1) - self._height_scanner.data.ray_hits_w[..., 2] - 0.5
             ).clip(-1.0, 1.0)
-        obs = torch.cat(
+        priv_scan = height_data
+
+        # Foot contact flags: 1.0 when contact force on a foot exceeds the threshold.
+        net_contact_forces = self._contact_sensor.data.net_forces_w_history
+        foot_contacts = (
+            torch.norm(net_contact_forces[:, -1, self._feet_ids], dim=-1) > 1.0
+        ).float()
+
+        prop_obs = torch.cat(
             [
-                tensor
-                for tensor in (
-                    self._robot.data.root_lin_vel_b,
-                    self._robot.data.root_ang_vel_b,
-                    self._robot.data.projected_gravity_b,
-                    self._commands,
-                    self._robot.data.joint_pos - self._robot.data.default_joint_pos,
-                    self._robot.data.joint_vel,
-                    height_data,
-                    self._actions,
-                )
-                if tensor is not None
+                self._robot.data.joint_pos - self._robot.data.default_joint_pos,  # 12D
+                self._robot.data.joint_vel,  # 12D
+                self._robot.data.projected_gravity_b,  # 3D
+                self._robot.data.root_lin_vel_b,  # 3D
+                self._robot.data.root_ang_vel_b,  # 3D
+                self._commands,  # 3D
+                self._actions,  # 12D (last action)
+                foot_contacts,  # 4D (foot contact flags)
             ],
             dim=-1,
         )
-        observations = {"policy": obs}
+        observations = {"policy": prop_obs}
+
+        # priv_scan is scandot data(height_data)
+        if priv_scan is not None:
+            # privileged critic obs: proprio + height scan
+            observations["critic"] = torch.cat([prop_obs, priv_scan], dim=-1)
+        elif self.cfg.state_space:
+            observations["critic"] = prop_obs
 
         # print("angular velocity x/y: ", self._robot.data.root_ang_vel_b[0,2])
 
