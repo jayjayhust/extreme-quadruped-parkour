@@ -112,11 +112,20 @@ class Go2Env(DirectRLEnv):
 
     def _capture_dr_from_sim_once(self):
         """Capture DR values from the simulation once after startup events."""
-        # mass and com
-        if getattr(self._robot.data, "default_mass", None) is not None:
-            self._dr_mass[:] = self._robot.data.default_mass[:, self._base_id].view(-1, 1)
-        if getattr(self._robot.data, "body_com_pos_b", None) is not None:
-            self._dr_com[:] = self._robot.data.body_com_pos_b[:, self._base_id, :].view(-1, 3)
+        # mass and com: capture actual values from PhysX after startup randomization
+        try:
+            masses = self._robot.root_physx_view.get_masses().to(self.device)
+            self._dr_mass[:] = masses[:, self._base_id].unsqueeze(1)
+        except Exception:
+            if getattr(self._robot.data, "default_mass", None) is not None:
+                self._dr_mass[:] = self._robot.data.default_mass[:, self._base_id].view(-1, 1)
+
+        try:
+            coms = self._robot.root_physx_view.get_coms().to(self.device)
+            self._dr_com[:] = coms[:, self._base_id, :3]
+        except Exception:
+            if getattr(self._robot.data, "body_com_pos_b", None) is not None:
+                self._dr_com[:] = self._robot.data.body_com_pos_b[:, self._base_id, :].view(-1, 3)
 
         # PD gain scales: ratio of current actuator gains to defaults
         if self._robot.actuators:
