@@ -114,9 +114,9 @@ class Go2Env(DirectRLEnv):
         """Capture DR values from the simulation once after startup events."""
         # mass and com
         if getattr(self._robot.data, "default_mass", None) is not None:
-            self._dr_mass[:] = self._robot.data.default_mass[:, self._base_id].unsqueeze(1)
+            self._dr_mass[:] = self._robot.data.default_mass[:, self._base_id].view(-1, 1)
         if getattr(self._robot.data, "body_com_pos_b", None) is not None:
-            self._dr_com[:] = self._robot.data.body_com_pos_b[:, self._base_id]
+            self._dr_com[:] = self._robot.data.body_com_pos_b[:, self._base_id, :].view(-1, 3)
 
         # PD gain scales: ratio of current actuator gains to defaults
         if self._robot.actuators:
@@ -167,7 +167,8 @@ class Go2Env(DirectRLEnv):
         bucket_ids = torch.randint(0, num_buckets, (self.num_envs, num_shapes), device=device_cpu)
         material_samples = buckets[bucket_ids]  # (num_envs, num_shapes, 3)
         materials[:] = material_samples
-        view.set_material_properties(materials, None)
+        indices = torch.arange(num_shapes, device=device_cpu, dtype=torch.int32)
+        view.set_material_properties(materials, indices)
 
         # store one representative friction per env for priv_obs (mean of assigned static friction)
         static_friction = material_samples[:, :, 0]

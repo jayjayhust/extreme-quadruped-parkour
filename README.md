@@ -64,7 +64,7 @@ pip install -e source/isaaclab_tasks
 ```
 > **Rough Terrain heading alignment(default): yaw 명령이 목표 heading을 추종하도록 활성화_25_10_23**
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 env.heading_command=True
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 4096 env.heading_command=True
 ```
 
 #### Playing unitree GO2_direct_ours
