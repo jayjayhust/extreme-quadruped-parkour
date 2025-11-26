@@ -115,17 +115,33 @@ class Go2Env(DirectRLEnv):
         # mass and com: capture actual values from PhysX after startup randomization
         try:
             masses = self._robot.root_physx_view.get_masses().to(self.device)
-            self._dr_mass[:] = masses[:, self._base_id].unsqueeze(1)
-        except Exception:
-            print("#######Exception Mass#######")
+            base_mass = masses[:, self._base_id]
+            if base_mass.dim() > 2:
+                base_mass = base_mass.squeeze(1)
+            self._dr_mass[:] = base_mass.view(-1, 1)
+            print(
+                "[DR] base mass sample (per-env):",
+                base_mass.detach().cpu().numpy().tolist()[: min(5, len(base_mass))],
+                "total mass sample:",
+                masses.sum(dim=1).detach().cpu().numpy().tolist()[: min(5, len(masses))],
+            )
+        except Exception as e:
+            print("mass fallback, error:", e)
             if getattr(self._robot.data, "default_mass", None) is not None:
                 self._dr_mass[:] = self._robot.data.default_mass[:, self._base_id].view(-1, 1)
 
         try:
             coms = self._robot.root_physx_view.get_coms().to(self.device)
-            self._dr_com[:] = coms[:, self._base_id, :3]
-        except Exception:
-            print("#######Exception COM#######")
+            base_com = coms[:, self._base_id, :3]
+            if base_com.dim() > 3:
+                base_com = base_com.squeeze(1)
+            self._dr_com[:] = base_com.view(-1, 3)
+            print(
+                "[DR] base COM sample (per-env):",
+                base_com.detach().cpu().numpy().tolist()[: min(5, len(base_com))],
+            )
+        except Exception as e:
+            print("com fallback, error:", e)
             if getattr(self._robot.data, "body_com_pos_b", None) is not None:
                 self._dr_com[:] = self._robot.data.body_com_pos_b[:, self._base_id, :].view(-1, 3)
 
