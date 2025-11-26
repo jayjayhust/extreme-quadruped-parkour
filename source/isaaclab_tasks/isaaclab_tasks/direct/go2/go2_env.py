@@ -150,6 +150,7 @@ class Go2Env(DirectRLEnv):
         # friction: keep as configured terrain friction (events are startup and not easily readable)
         if hasattr(self.cfg.terrain, "physics_material"):
             self._dr_friction[:] = float(self.cfg.terrain.physics_material.static_friction)
+        # print("mass sample mean", self._dr_mass.mean())
 
     def _apply_friction_dr_once(self):
         """Sample friction buckets and apply to robot shapes; mirror into _dr_friction."""
