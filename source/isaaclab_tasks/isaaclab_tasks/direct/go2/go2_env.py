@@ -117,6 +117,7 @@ class Go2Env(DirectRLEnv):
             masses = self._robot.root_physx_view.get_masses().to(self.device)
             self._dr_mass[:] = masses[:, self._base_id].unsqueeze(1)
         except Exception:
+            print("#######Exception Mass#######")
             if getattr(self._robot.data, "default_mass", None) is not None:
                 self._dr_mass[:] = self._robot.data.default_mass[:, self._base_id].view(-1, 1)
 
@@ -124,6 +125,7 @@ class Go2Env(DirectRLEnv):
             coms = self._robot.root_physx_view.get_coms().to(self.device)
             self._dr_com[:] = coms[:, self._base_id, :3]
         except Exception:
+            print("#######Exception COM#######")
             if getattr(self._robot.data, "body_com_pos_b", None) is not None:
                 self._dr_com[:] = self._robot.data.body_com_pos_b[:, self._base_id, :].view(-1, 3)
 
