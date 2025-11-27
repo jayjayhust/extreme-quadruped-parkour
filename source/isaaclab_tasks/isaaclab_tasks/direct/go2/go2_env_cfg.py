@@ -143,8 +143,9 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 @configclass
 class Go2RoughEnvCfg(Go2FlatEnvCfg):
     # env
-    observation_space = 52
-    state_space = 268  # 52 prop + 29 priv + 187 scan
+    # policy: 52 prop + 187 scan = 239; critic: 52 prop + 29 priv + 187 scan = 268
+    observation_space = 239
+    state_space = 268
 
     sim: SimulationCfg = Go2FlatEnvCfg().sim.replace(
         physx=Go2FlatEnvCfg().sim.physx.replace(gpu_max_rigid_patch_count=12 * 2**15)

@@ -41,6 +41,16 @@ class RslRlPpoActorCriticCfg:
     activation: str = MISSING
     """The activation function for the actor and critic networks."""
 
+    # optional custom encoders
+    num_prop_obs: int | None = None
+    """Number of proprioceptive observations (for custom splits)."""
+
+    num_scan_obs: int | None = None
+    """Number of scan observations (for custom splits)."""
+
+    scan_encoder_dims: list[int] | None = None
+    """Hidden dims for scan encoder (if used)."""
+
 
 @configclass
 class RslRlPpoActorCriticRecurrentCfg(RslRlPpoActorCriticCfg):

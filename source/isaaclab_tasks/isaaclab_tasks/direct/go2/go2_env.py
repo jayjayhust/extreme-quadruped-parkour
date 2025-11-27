@@ -312,7 +312,12 @@ class Go2Env(DirectRLEnv):
             ],
             dim=-1,
         )
-        observations = {"policy": prop_obs}
+        # actor obs: prop_obs + (optional) priv_scan
+        if priv_scan is not None:
+            policy_obs = torch.cat([prop_obs, priv_scan], dim=-1)
+        else:
+            policy_obs = prop_obs
+        observations = {"policy": policy_obs}
 
         # privileged obs (critic only): mass/com + friction + PD gain scales + optional scan
         # use DR buffers to avoid mismatch with internal PhysX sampling

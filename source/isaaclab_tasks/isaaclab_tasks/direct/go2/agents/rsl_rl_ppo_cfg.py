@@ -16,11 +16,15 @@ class Go2FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     experiment_name = "go2_flat_direct"
     empirical_normalization = True
     policy = RslRlPpoActorCriticCfg(
+        class_name="ActorCriticScan",
         init_noise_std= 0.5,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
-        noise_std_type='log'
+        noise_std_type='log',
+        num_prop_obs=52,
+        num_scan_obs=0,
+        scan_encoder_dims=[128, 64, 32],
     )
     algorithm = RslRlPpoAlgorithmCfg(
         value_loss_coef=1.0,
@@ -48,11 +52,15 @@ class Go2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 
     # init_noise_std, noise_std_type은 Actor network가 출력한 mean에 더해주는 "std"를 학습할 때 사용하는 변수
     policy = RslRlPpoActorCriticCfg(
+        class_name="ActorCriticScan",
         init_noise_std=1.0,
         noise_std_type="log",
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
+        num_prop_obs=52,
+        num_scan_obs=187,
+        scan_encoder_dims=[128, 64, 32],
     )
     algorithm = RslRlPpoAlgorithmCfg(
         value_loss_coef=1.0,

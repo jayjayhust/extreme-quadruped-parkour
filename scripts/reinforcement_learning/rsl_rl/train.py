@@ -9,11 +9,22 @@
 
 import argparse
 import sys
+import builtins
 
 from isaaclab.app import AppLauncher
 
 # local imports
 import cli_args  # isort: skip
+
+
+def _register_custom_actor():
+    """Register custom actor class after Omniverse is available."""
+    try:
+        from isaaclab_tasks.direct.go2.agents.actor_critic_scan import ActorCriticScan
+
+        builtins.ActorCriticScan = ActorCriticScan
+    except Exception:
+        pass
 
 
 # add argparse arguments
@@ -108,6 +119,7 @@ torch.backends.cudnn.benchmark = False
 @hydra_task_config(args_cli.task, args_cli.agent)
 def main(env_cfg: ManagerBasedRLEnvCfg | DirectRLEnvCfg | DirectMARLEnvCfg, agent_cfg: RslRlOnPolicyRunnerCfg):
     """Train with RSL-RL agent."""
+    _register_custom_actor()
     # override configurations with non-hydra CLI arguments
     agent_cfg = cli_args.update_rsl_rl_cfg(agent_cfg, args_cli)
     env_cfg.scene.num_envs = args_cli.num_envs if args_cli.num_envs is not None else env_cfg.scene.num_envs
