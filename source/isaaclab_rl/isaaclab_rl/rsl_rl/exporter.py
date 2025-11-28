@@ -123,6 +123,15 @@ class _OnnxPolicyExporter(torch.nn.Module):
         super().__init__()
         self.verbose = verbose
         self.is_recurrent = policy.is_recurrent
+        # flag for policies that require a custom actor input build (e.g., scan encoder)
+        self.use_actor_encoder = hasattr(policy, "_build_actor_input")
+        # store full policy if we need its preprocessing
+        if self.use_actor_encoder:
+            self.policy = copy.deepcopy(policy)
+            # raw obs dim (before actor-side preprocessing)
+            self.actor_obs_dim = policy.num_actor_obs
+        else:
+            self.policy = None
         # copy policy parameters
         if hasattr(policy, "actor"):
             self.actor = copy.deepcopy(policy.actor)
@@ -163,6 +172,10 @@ class _OnnxPolicyExporter(torch.nn.Module):
         return self.actor(x), h
 
     def forward(self, x):
+        if self.use_actor_encoder:
+            x = self.normalizer(x)
+            x = self.policy._build_actor_input(x)
+            return self.actor(x)
         return self.actor(self.normalizer(x))
 
     def export(self, path, filename):
@@ -200,7 +213,9 @@ class _OnnxPolicyExporter(torch.nn.Module):
             else:
                 raise NotImplementedError(f"Unsupported RNN type: {self.rnn_type}")
         else:
-            obs = torch.zeros(1, self.actor[0].in_features)
+            # use raw obs dim when actor input is built inside the policy
+            obs_dim = self.actor_obs_dim if self.use_actor_encoder else self.actor[0].in_features
+            obs = torch.zeros(1, obs_dim)
             torch.onnx.export(
                 self,
                 obs,

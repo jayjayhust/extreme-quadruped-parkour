@@ -42,6 +42,9 @@ class ActorCriticScan(nn.Module):
         super().__init__()
         activation = resolve_nn_activation(activation)
 
+        # raw observation dims passed from runner/env
+        self.num_actor_obs = num_actor_obs
+        self.num_critic_obs = num_critic_obs
         self.num_prop = num_prop_obs
         self.num_scan = max(0, num_scan_obs)
         self.num_priv = num_critic_obs - self.num_prop - self.num_scan
