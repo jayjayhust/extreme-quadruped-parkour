@@ -15,6 +15,12 @@ from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns
 from isaaclab.sim import SimulationCfg
 from isaaclab.terrains import TerrainImporterCfg
+from isaaclab.terrains.trimesh.mesh_terrains_cfg import (
+    MeshDebrisTerrainCfg,
+    MeshGapStripTerrainCfg,
+    MeshHurdleStripTerrainCfg,
+    MeshStairsStripTerrainCfg,
+)
 from isaaclab.utils import configclass
 
 ##
@@ -142,6 +148,11 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
 
 @configclass
 class Go2RoughEnvCfg(Go2FlatEnvCfg):
+    # gap terrain constants (used for curriculum + spawn offset)
+    gap_subterrain_key: str = "gap_bar"
+    hurdle_subterrain_key: str = "hurdle_strip"
+    gap_spawn_offset: float = -1.0  # spawn further back on gap/hurdle tiles to give more run-up
+
     # env
     # policy: 52 prop + 187 scan = 239; critic: 52 prop + 29 priv + 187 scan = 268
     observation_space = 239
@@ -155,14 +166,56 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
         prim_path="/World/ground",
         terrain_type="generator",
         terrain_generator=ROUGH_TERRAINS_CFG.replace(
+            size=(23.0, 6.0),  # Terrain Size 23m X 6m -> x축으로만 직진하니까!
+            num_rows=10,  # level 0~9 단계까지
+            num_cols=15,  # gap/hurdle/stairs 3컬럼씩, 나머지 2컬럼씩
             sub_terrains={
-                **ROUGH_TERRAINS_CFG.sub_terrains,
-                "boxes": ROUGH_TERRAINS_CFG.sub_terrains["boxes"].replace(grid_height_range=(0.025, 0.1)),
-                "random_rough": ROUGH_TERRAINS_CFG.sub_terrains["random_rough"].replace(
-                    noise_range=(0.01, 0.06),
-                    noise_step=0.01,
+                # 15컬럼에 6타입 배치 (대체로 균등 비율)
+                "boxes": ROUGH_TERRAINS_CFG.sub_terrains["boxes"].replace(
+                    proportion=(2 / 15), grid_height_range=(0.025, 0.1)
                 ),
-            }
+                "random_rough": ROUGH_TERRAINS_CFG.sub_terrains["random_rough"].replace(
+                    proportion=(2 / 15), noise_range=(0.01, 0.06), noise_step=0.01
+                ),
+                "debris_field": MeshDebrisTerrainCfg(
+                    proportion=(2 / 15),
+                    size=(23.0, 23.0),
+                    num_debris_min=20,
+                    num_debris_max=40,
+                    ground_thickness=0.1,
+                    box_length_range=(0.5, 2.0),
+                    box_width_range=(0.2, 0.6),
+                    box_thickness_range=(0.05, 0.25),
+                    cyl_radius_range=(0.05, 0.2),
+                    cyl_length_range=(0.5, 2.0),
+                ),
+                "gap_bar": MeshGapStripTerrainCfg(
+                    proportion=(3 / 15),
+                    size=(23.0, 23.0),
+                    gap_width_range=(0.1, 0.8),
+                    landing_length=0.45,
+                    start_platform_length=8.0,  # longer run-up for the gap strip
+                ),
+                # hurdle strip: run-up then repeated hurdles with height/gap increasing in difficulty
+                "hurdle_strip": MeshHurdleStripTerrainCfg(
+                    proportion=(3 / 15),
+                    size=(23.0, 23.0),
+                    hurdle_height_range=(0.05, 0.3),
+                    hurdle_thickness=0.2,
+                    hurdle_gap_range=(0.7, 2.0),
+                    start_platform_length=3.0,
+                ),
+                # stairs strip: run-up then up/down stair segments
+                "stairs_strip": MeshStairsStripTerrainCfg(
+                    proportion=(3 / 15),
+                    size=(23.0, 23.0),
+                    start_platform_length=3.0,
+                    segment_length=5.0,
+                    step_height_range=(0.05, 0.23),
+                    steps_per_segment=10,
+                    pattern=("up", "down", "up", "down"),
+                ),
+            },
         ),
         max_init_terrain_level=5, # 사수님이 9였다가 1로 바꾸심 -> 내가 5로 바꿈
         collision_group=-1,
@@ -189,13 +242,13 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
         mesh_prim_paths=["/World/ground"],
     )
 
-    # Test5 reward scales (override from flat config)
+    # Test7 reward scales (override from flat config)
     base_height_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
     flat_orientation_reward_scale = 0.0 # 험지니까 몸이 엄청 기울거라서
     feet_air_time_reward_scale = 0.125 # Test4 (considering managerbased curriculum)
     lin_vel_reward_scale = 2.5 # Test5에서는 더 크게 (considering managerbased curriculum)
     yaw_rate_reward_scale = 2.0 # Test5에서는 더 작게 (considering managerbased curriculum)
-    z_vel_reward_scale = -2.0
+    z_vel_reward_scale = -0.25 # Test7에서는 더 작게(jumping 많은 지형 고려)
     ang_vel_reward_scale = -0.05
     joint_torque_reward_scale = -2.5e-5
     joint_accel_reward_scale = -2.5e-7
@@ -206,9 +259,9 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     dof_close_to_default_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
 
     # keep curriculum active and random commands for training
-    command_mode: str = "random"
+    command_mode: str = "fixed"
     use_curriculum: bool = True
-    heading_command: bool = True
+    heading_command: bool = False
 
 
 @configclass

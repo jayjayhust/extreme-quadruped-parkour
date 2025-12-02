@@ -86,6 +86,9 @@ class SubTerrainBaseCfg:
     :attr:`isaaclab.scene.TerrainImporterCfg.size` attribute.
     """
 
+    size_override: tuple[float, float] | None = None
+    """Optional per-subterrain size. If set, overrides generator size for mesh creation."""
+
     flat_patch_sampling: dict[str, FlatPatchSamplingCfg] | None = None
     """Dictionary of configurations for sampling flat patches on the sub-terrain. Defaults to None,
     in which case no flat patch sampling is performed.

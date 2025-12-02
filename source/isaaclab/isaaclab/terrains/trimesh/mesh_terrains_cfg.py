@@ -141,6 +141,56 @@ class MeshGapTerrainCfg(SubTerrainBaseCfg):
 
 
 @configclass
+class MeshGapStripTerrainCfg(SubTerrainBaseCfg):
+    """Configuration for a repeated gap-and-landing strip along +X."""
+
+    function = mesh_terrains.gap_strip_terrain
+
+    gap_width_range: tuple[float, float] = MISSING
+    """The minimum and maximum width of the gaps (in m)."""
+    landing_length: float = 0.5
+    """Length of each landing platform between gaps (in m)."""
+    start_platform_length: float = 3.0
+    """Length of the initial run-up platform (in m)."""
+    platform_width: float = 3.0
+    """Alias for the run-up platform length for spawn clamping."""
+
+
+@configclass
+class MeshHurdleStripTerrainCfg(SubTerrainBaseCfg):
+    """Configuration for a repeated hurdle strip along +X with a run-up platform."""
+
+    function = mesh_terrains.hurdle_strip_terrain
+
+    hurdle_height_range: tuple[float, float] = (0.05, 0.3)
+    """Min/max hurdle height (in m) over difficulty."""
+    hurdle_thickness: float = 0.2
+    """Thickness of each hurdle block along X (in m)."""
+    hurdle_gap_range: tuple[float, float] = (0.7, 2.0)
+    """Min/max flat gap between hurdles (in m) over difficulty."""
+    start_platform_length: float = 3.0
+    """Run-up length before the first hurdle (in m)."""
+
+
+@configclass
+class MeshStairsStripTerrainCfg(SubTerrainBaseCfg):
+    """Configuration for repeated up/down stair segments along +X with a run-up."""
+
+    function = mesh_terrains.stairs_strip_terrain
+
+    start_platform_length: float = 3.0
+    """Run-up length before the first stair (in m)."""
+    segment_length: float = 4.0
+    """Length of each stair segment (in m)."""
+    step_height_range: tuple[float, float] = (0.05, 0.23)
+    """Min/max total height change per segment (in m) over difficulty."""
+    steps_per_segment: int = 10
+    """Number of steps per segment."""
+    pattern: tuple[str, ...] = ("up", "down", "up", "down")
+    """Sequence of segments; each element is 'up' or 'down'."""
+
+
+@configclass
 class MeshFloatingRingTerrainCfg(SubTerrainBaseCfg):
     """Configuration for a terrain with a floating ring around the center."""
 
@@ -219,6 +269,32 @@ class MeshRepeatedObjectsTerrainCfg(SubTerrainBaseCfg):
                 " future. Use abs_height_noise:list[float] instead."
             )
             self.abs_height_noise = (-self.max_height_noise, self.max_height_noise)
+
+
+@configclass
+class MeshDebrisTerrainCfg(SubTerrainBaseCfg):
+    """Configuration for a debris field with mixed boxes and cylinders."""
+
+    function = mesh_terrains.debris_terrain
+
+    num_debris_min: int = 20
+    """Minimum number of debris primitives (at difficulty=0)."""
+    num_debris_max: int = 40
+    """Maximum number of debris primitives (at difficulty=1)."""
+    ground_thickness: float = 0.1
+    """Thickness of the base ground slab (in m)."""
+    box_length_range: tuple[float, float] = (0.5, 2.0)
+    """Range for box length (x) in meters (laid flat)."""
+    box_width_range: tuple[float, float] = (0.2, 0.6)
+    """Range for box width (y) in meters (laid flat)."""
+    box_thickness_range: tuple[float, float] = (0.05, 0.25)
+    """Range for box thickness (z) in meters. Samples grow with difficulty."""
+    cyl_radius_range: tuple[float, float] = (0.05, 0.25)
+    """Range for cylinder radius in meters. Samples grow with difficulty."""
+    cyl_length_range: tuple[float, float] = (0.5, 2.0)
+    """Range for cylinder length in meters (laid horizontally)."""
+    seed: int | None = None
+    """Optional seed for deterministic debris placement."""
 
 
 @configclass

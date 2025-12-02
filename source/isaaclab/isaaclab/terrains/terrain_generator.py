@@ -353,6 +353,9 @@ class TerrainGenerator:
         """
         # copy the configuration
         cfg = cfg.copy()
+        # allow per-subterrain size override (e.g., keep some square while generator size is rectangular)
+        if getattr(cfg, "size_override", None) is not None:
+            cfg.size = cfg.size_override
         # add other parameters to the sub-terrain configuration
         cfg.difficulty = float(difficulty)
         cfg.seed = self.cfg.seed

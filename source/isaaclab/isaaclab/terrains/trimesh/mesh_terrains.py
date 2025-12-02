@@ -277,9 +277,6 @@ def random_grid_terrain(
         ValueError: If the terrain is not square. This method only supports square terrains.
         RuntimeError: If the grid width is large such that the border width is negative.
     """
-    # check to ensure square terrain
-    if cfg.size[0] != cfg.size[1]:
-        raise ValueError(f"The terrain must be square. Received size: {cfg.size}.")
     # resolve the terrain configuration
     grid_height = cfg.grid_height_range[0] + difficulty * (cfg.grid_height_range[1] - cfg.grid_height_range[0])
 
@@ -293,11 +290,12 @@ def random_grid_terrain(
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
     # generate the border
-    border_width = cfg.size[0] - min(num_boxes_x, num_boxes_y) * cfg.grid_width
-    if border_width > 0:
+    border_width_x = cfg.size[0] - num_boxes_x * cfg.grid_width
+    border_width_y = cfg.size[1] - num_boxes_y * cfg.grid_width
+    if border_width_x > 0 and border_width_y > 0:
         # compute parameters for the border
         border_center = (0.5 * cfg.size[0], 0.5 * cfg.size[1], -terrain_height / 2)
-        border_inner_size = (cfg.size[0] - border_width, cfg.size[1] - border_width)
+        border_inner_size = (cfg.size[0] - border_width_x, cfg.size[1] - border_width_y)
         # create border meshes
         make_borders = make_border(cfg.size, border_inner_size, terrain_height, border_center)
         meshes_list += make_borders
@@ -322,20 +320,22 @@ def random_grid_terrain(
     yy = yy.flatten().view(-1, 1)
     xx_yy = torch.cat((xx, yy), dim=1)
     # offset the vertices
-    offsets = cfg.grid_width * xx_yy + border_width / 2
+    offsets = torch.zeros_like(xx_yy, dtype=torch.float, device=device)
+    offsets[:, 0] = cfg.grid_width * xx[:, 0] + border_width_x / 2
+    offsets[:, 1] = cfg.grid_width * yy[:, 0] + border_width_y / 2
     vertices[:, :, :2] += offsets.unsqueeze(1)
     # mask the vertices to create holes, s.t. only grids along the x and y axis are present
     if cfg.holes:
         # -- x-axis
         mask_x = torch.logical_and(
-            (vertices[:, :, 0] > (cfg.size[0] - border_width - cfg.platform_width) / 2).all(dim=1),
-            (vertices[:, :, 0] < (cfg.size[0] + border_width + cfg.platform_width) / 2).all(dim=1),
+            (vertices[:, :, 0] > (cfg.size[0] - border_width_x - cfg.platform_width) / 2).all(dim=1),
+            (vertices[:, :, 0] < (cfg.size[0] + border_width_x + cfg.platform_width) / 2).all(dim=1),
         )
         vertices_x = vertices[mask_x]
         # -- y-axis
         mask_y = torch.logical_and(
-            (vertices[:, :, 1] > (cfg.size[1] - border_width - cfg.platform_width) / 2).all(dim=1),
-            (vertices[:, :, 1] < (cfg.size[1] + border_width + cfg.platform_width) / 2).all(dim=1),
+            (vertices[:, :, 1] > (cfg.size[1] - border_width_y - cfg.platform_width) / 2).all(dim=1),
+            (vertices[:, :, 1] < (cfg.size[1] + border_width_y + cfg.platform_width) / 2).all(dim=1),
         )
         vertices_y = vertices[mask_y]
         # -- combine these vertices
@@ -597,6 +597,155 @@ def gap_terrain(
     return meshes_list, origin
 
 
+def gap_strip_terrain(
+    difficulty: float, cfg: mesh_terrains_cfg.MeshGapStripTerrainCfg
+) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+    """Generate a repeated gap + landing strip along +X with a run-up platform."""
+    gap_width = cfg.gap_width_range[0] + difficulty * (cfg.gap_width_range[1] - cfg.gap_width_range[0])
+    landing_len = cfg.landing_length
+    start_len = cfg.start_platform_length
+
+    meshes_list: list[trimesh.Trimesh] = []
+    terrain_height = 1.0
+    z_center = -terrain_height / 2
+    y_center = 0.5 * cfg.size[1]
+
+    # start platform / x_ptr를 runup끝으로 이동
+    x_ptr = 0.0
+    start_dim = (start_len, cfg.size[1], terrain_height)
+    start_center = (x_ptr + 0.5 * start_len, y_center, z_center)
+    meshes_list.append(trimesh.creation.box(start_dim, trimesh.transformations.translation_matrix(start_center)))
+    x_ptr += start_len
+
+    # repeat [gap + landing] until size.x is filled
+    while x_ptr + gap_width + landing_len <= cfg.size[0]:
+        x_ptr += gap_width  # skip gap region (air)
+        land_center = (x_ptr + 0.5 * landing_len, y_center, z_center)
+        land_dim = (landing_len, cfg.size[1], terrain_height)
+        meshes_list.append(trimesh.creation.box(land_dim, trimesh.transformations.translation_matrix(land_center)))
+        x_ptr += landing_len
+
+    # fill any remaining tail with flat ground to avoid an extra-long final gap
+    if x_ptr < cfg.size[0]:
+        tail_len = cfg.size[0] - x_ptr
+        tail_center = (x_ptr + 0.5 * tail_len, y_center, z_center)
+        tail_dim = (tail_len, cfg.size[1], terrain_height)
+        meshes_list.append(trimesh.creation.box(tail_dim, trimesh.transformations.translation_matrix(tail_center)))
+
+    origin = np.array([start_len * 0.5, y_center, 0.0])
+    return meshes_list, origin
+
+
+def hurdle_strip_terrain(
+    difficulty: float, cfg: mesh_terrains_cfg.MeshHurdleStripTerrainCfg
+) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+    """Generate repeated hurdles along +X with a run-up platform over flat ground."""
+    hurdle_height = cfg.hurdle_height_range[0] + difficulty * (cfg.hurdle_height_range[1] - cfg.hurdle_height_range[0])
+    gap_len = cfg.hurdle_gap_range[1] - difficulty * (cfg.hurdle_gap_range[1] - cfg.hurdle_gap_range[0])
+    hurdle_thickness = cfg.hurdle_thickness
+    start_len = cfg.start_platform_length
+
+    meshes_list: list[trimesh.Trimesh] = []
+    ground_thickness = 0.1
+    y_center = 0.5 * cfg.size[1]
+
+    # flat ground across the whole tile
+    ground_dim = (cfg.size[0], cfg.size[1], ground_thickness)
+    ground_center = (0.5 * cfg.size[0], y_center, -0.5 * ground_thickness)
+    meshes_list.append(trimesh.creation.box(ground_dim, trimesh.transformations.translation_matrix(ground_center)))
+
+    # hurdles repeated until the end of the tile (after run-up)
+    x_ptr = start_len
+    while x_ptr + hurdle_thickness <= cfg.size[0]:
+        hurdle_center = (x_ptr + 0.5 * hurdle_thickness, y_center, 0.5 * hurdle_height)
+        hurdle_dim = (hurdle_thickness, cfg.size[1], hurdle_height)
+        meshes_list.append(trimesh.creation.box(hurdle_dim, trimesh.transformations.translation_matrix(hurdle_center)))
+        x_ptr += hurdle_thickness + gap_len
+
+    origin = np.array([start_len * 0.5, y_center, 0.0])
+    return meshes_list, origin
+
+
+def stairs_strip_terrain(
+    difficulty: float, cfg: mesh_terrains_cfg.MeshStairsStripTerrainCfg
+) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+    """Generate repeated up/down stair segments along +X over flat ground."""
+    meshes_list: list[trimesh.Trimesh] = []
+    ground_thickness = 0.1
+    wall_thickness = ground_thickness
+    y_center = 0.5 * cfg.size[1]
+    y_left = 0.5 * wall_thickness
+    y_right = cfg.size[1] - 0.5 * wall_thickness
+
+    # parameters
+    step_height = cfg.step_height_range[0] + difficulty * (cfg.step_height_range[1] - cfg.step_height_range[0])
+    seg_len = cfg.segment_length
+    steps = max(1, cfg.steps_per_segment)
+    step_len = seg_len / steps
+
+    def add_side_walls(x_start: float, length: float, top_height: float):
+        """Add thin side walls along ±Y to avoid open sides on the stair strip."""
+        wall_height = top_height + ground_thickness
+        if wall_height <= 0.0 or length <= 0.0:
+            return
+        z_center = 0.5 * (top_height - ground_thickness)
+        x_center = x_start + 0.5 * length
+        wall_dim = (length, wall_thickness, wall_height)
+        meshes_list.append(
+            trimesh.creation.box(wall_dim, trimesh.transformations.translation_matrix((x_center, y_left, z_center)))
+        )
+        meshes_list.append(
+            trimesh.creation.box(wall_dim, trimesh.transformations.translation_matrix((x_center, y_right, z_center)))
+        )
+
+    # run-up flat
+    x_ptr = 0.0
+    height = 0.0
+    start_len = cfg.start_platform_length
+    start_dim = (start_len, cfg.size[1], ground_thickness)
+    start_center = (x_ptr + 0.5 * start_len, y_center, height - 0.5 * ground_thickness)
+    meshes_list.append(trimesh.creation.box(start_dim, trimesh.transformations.translation_matrix(start_center)))
+    add_side_walls(x_ptr, start_len, height)
+    x_ptr += start_len
+
+    # build segments
+    for seg_dir in cfg.pattern:
+        for _ in range(steps):
+            prev_height = height
+            if seg_dir == "up":
+                height += step_height
+            elif seg_dir == "down":
+                height -= step_height
+            dim = (step_len, cfg.size[1], ground_thickness)
+            center = (x_ptr + 0.5 * step_len, y_center, height - 0.5 * ground_thickness)
+            meshes_list.append(trimesh.creation.box(dim, trimesh.transformations.translation_matrix(center)))
+            # vertical face between prev_height and current height at the leading edge
+            wall_height = abs(height - prev_height)
+            if wall_height > 1e-6:
+                wall_dim = (ground_thickness, cfg.size[1], wall_height)
+                wall_center = (x_ptr + 0.5 * ground_thickness, y_center, 0.5 * (height + prev_height))
+                meshes_list.append(
+                    trimesh.creation.box(wall_dim, trimesh.transformations.translation_matrix(wall_center))
+                )
+            add_side_walls(x_ptr, step_len, height)
+            x_ptr += step_len
+            if x_ptr >= cfg.size[0]:
+                break
+        if x_ptr >= cfg.size[0]:
+            break
+
+    # remaining flat
+    if x_ptr < cfg.size[0]:
+        flat_len = cfg.size[0] - x_ptr
+        flat_dim = (flat_len, cfg.size[1], ground_thickness)
+        flat_center = (x_ptr + 0.5 * flat_len, y_center, height - 0.5 * ground_thickness)
+        meshes_list.append(trimesh.creation.box(flat_dim, trimesh.transformations.translation_matrix(flat_center)))
+        add_side_walls(x_ptr, flat_len, height)
+
+    origin = np.array([cfg.start_platform_length * 0.5, y_center, 0.0])
+    return meshes_list, origin
+
+
 def floating_ring_terrain(
     difficulty: float, cfg: mesh_terrains_cfg.MeshFloatingRingTerrainCfg
 ) -> tuple[list[trimesh.Trimesh], np.ndarray]:
@@ -715,6 +864,62 @@ def star_terrain(
     # specify the origin of the terrain
     origin = np.asarray([0.5 * cfg.size[0], 0.5 * cfg.size[1], 0.0])
 
+    return meshes_list, origin
+
+
+def debris_terrain(
+    difficulty: float, cfg: mesh_terrains_cfg.MeshDebrisTerrainCfg
+) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+    """Generate a debris field with mixed boxes and cylinders scattered on a flat ground."""
+    rng = np.random.default_rng(cfg.seed if cfg.seed is not None else 0)
+    num_debris = int(cfg.num_debris_min + difficulty * (cfg.num_debris_max - cfg.num_debris_min))
+
+    meshes_list: list[trimesh.Trimesh] = []
+    terrain_height = cfg.ground_thickness
+    z_center = -terrain_height / 2
+    y_center = 0.5 * cfg.size[1]
+
+    # base ground
+    ground_dim = (cfg.size[0], cfg.size[1], terrain_height)
+    ground_center = (0.5 * cfg.size[0], y_center, z_center)
+    meshes_list.append(trimesh.creation.box(ground_dim, trimesh.transformations.translation_matrix(ground_center)))
+
+    for _ in range(num_debris):
+        use_cyl = rng.random() < 0.4  # blend of cylinders/boxes
+        if use_cyl:
+            radius_min, radius_max = cfg.cyl_radius_range
+            radius = rng.uniform(radius_min, radius_min + difficulty * (radius_max - radius_min))
+            length = rng.uniform(*cfg.cyl_length_range)
+            margin = max(radius, length / 2)
+            x = rng.uniform(margin, cfg.size[0] - margin)
+            y = rng.uniform(margin, cfg.size[1] - margin)
+            z = z_center + terrain_height / 2 + radius
+            yaw = rng.uniform(0.0, 2 * np.pi)
+            cyl = trimesh.creation.cylinder(radius=radius, height=length)
+            rot_y = trimesh.transformations.rotation_matrix(np.pi / 2, [0, 1, 0])
+            rot_z = trimesh.transformations.rotation_matrix(yaw, [0, 0, 1])
+            trans = trimesh.transformations.translation_matrix((x, y, z))
+            cyl.apply_transform(trimesh.transformations.concatenate_matrices(trans, rot_z, rot_y))
+            shape = cyl
+        else:
+            length = rng.uniform(*cfg.box_length_range)
+            width = rng.uniform(*cfg.box_width_range)
+            thick_min, thick_max = cfg.box_thickness_range
+            thickness = rng.uniform(thick_min, thick_min + difficulty * (thick_max - thick_min))
+            half_x = length / 2
+            half_y = width / 2
+            x = rng.uniform(half_x, cfg.size[0] - half_x)
+            y = rng.uniform(half_y, cfg.size[1] - half_y)
+            z = z_center + terrain_height / 2 + thickness / 2
+            yaw = rng.uniform(0.0, 2 * np.pi)
+            box = trimesh.creation.box((length, width, thickness))
+            trans = trimesh.transformations.translation_matrix((x, y, z))
+            rot = trimesh.transformations.rotation_matrix(yaw, [0, 0, 1])
+            box.apply_transform(trimesh.transformations.concatenate_matrices(trans, rot))
+            shape = box
+        meshes_list.append(shape)
+
+    origin = np.array([0.5 * cfg.size[0], y_center, 0.0])
     return meshes_list, origin
 
 
