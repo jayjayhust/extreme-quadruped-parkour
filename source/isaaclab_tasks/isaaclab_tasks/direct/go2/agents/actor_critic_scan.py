@@ -54,22 +54,15 @@ class ActorCriticScan(nn.Module):
                 f"num_prop={self.num_prop}, num_scan={self.num_scan}"
             )
 
-        # scan encoder (shared by actor & critic)
+        # scan encoders (actor/critic use identical structure but learn separate weights)
         self.scan_latent_dim = 0
         if self.num_scan > 0 and scan_encoder_dims is not None and len(scan_encoder_dims) > 0:
-            layers = []
-            in_dim = self.num_scan
-            for i, out_dim in enumerate(scan_encoder_dims):
-                layers.append(nn.Linear(in_dim, out_dim))
-                if i == len(scan_encoder_dims) - 1:
-                    layers.append(nn.Tanh())
-                else:
-                    layers.append(activation)
-                in_dim = out_dim
-            self.scan_encoder = nn.Sequential(*layers)
+            self.actor_scan_encoder = self._make_scan_encoder(scan_encoder_dims, activation)
+            self.critic_scan_encoder = self._make_scan_encoder(scan_encoder_dims, activation)
             self.scan_latent_dim = scan_encoder_dims[-1]
         else:
-            self.scan_encoder = None
+            self.actor_scan_encoder = None
+            self.critic_scan_encoder = None
             self.scan_latent_dim = self.num_scan
 
         # default hidden dims
@@ -130,17 +123,34 @@ class ActorCriticScan(nn.Module):
     def entropy(self):
         return self.distribution.entropy().sum(dim=-1) if self.distribution is not None else None
 
-    def _encode_scan(self, scan: torch.Tensor) -> torch.Tensor:
-        if self.scan_encoder is None:
+    def _make_scan_encoder(self, dims, activation):
+        layers = []
+        in_dim = self.num_scan
+        for i, out_dim in enumerate(dims):
+            layers.append(nn.Linear(in_dim, out_dim))
+            if i == len(dims) - 1:
+                layers.append(nn.Tanh())
+            else:
+                layers.append(activation)
+            in_dim = out_dim
+        return nn.Sequential(*layers)
+
+    def _encode_actor_scan(self, scan: torch.Tensor) -> torch.Tensor:
+        if self.actor_scan_encoder is None:
             return scan
-        return self.scan_encoder(scan)
+        return self.actor_scan_encoder(scan)
+
+    def _encode_critic_scan(self, scan: torch.Tensor) -> torch.Tensor:
+        if self.critic_scan_encoder is None:
+            return scan
+        return self.critic_scan_encoder(scan)
 
     def _build_actor_input(self, observations: torch.Tensor) -> torch.Tensor:
         if self.num_scan <= 0:
             return observations
         obs_prop = observations[:, : self.num_prop]
         obs_scan = observations[:, self.num_prop : self.num_prop + self.num_scan] # policy obs 벡터에서 스캔 구간만 잘라내는 부분입니다. policy obs 순서는 prop(앞 52) || scan(뒤 187)이므로, 그 슬라이스로 raw scan을 떼어내
-        z_scan = self._encode_scan(obs_scan)
+        z_scan = self._encode_actor_scan(obs_scan)
         return torch.cat([obs_prop, z_scan], dim=-1)
 
     def _build_critic_input(self, critic_observations: torch.Tensor) -> torch.Tensor:
@@ -151,7 +161,7 @@ class ActorCriticScan(nn.Module):
         obs_scan = critic_observations[
             :, self.num_prop + self.num_priv : self.num_prop + self.num_priv + self.num_scan
         ]
-        z_scan = self._encode_scan(obs_scan)
+        z_scan = self._encode_critic_scan(obs_scan)
         return torch.cat([obs_prop, obs_priv, z_scan], dim=-1)
 
     def update_distribution(self, observations):
