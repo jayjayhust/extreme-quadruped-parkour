@@ -109,7 +109,17 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     events: EventCfg = EventCfg()
 
     # robot
-    robot: ArticulationCfg = UNITREE_GO2_CFG.replace(prim_path="/World/envs/env_.*/Robot")
+    # Enable self-collisions and bump solver iterations so limbs don't pass through each other.
+    robot: ArticulationCfg = UNITREE_GO2_CFG.replace(
+        prim_path="/World/envs/env_.*/Robot",
+        spawn=UNITREE_GO2_CFG.spawn.replace(
+            articulation_props=UNITREE_GO2_CFG.spawn.articulation_props.replace(
+                enabled_self_collisions=True,
+                solver_position_iteration_count=8,
+                solver_velocity_iteration_count=2,
+            )
+        ),
+    )
     contact_sensor: ContactSensorCfg = ContactSensorCfg(
         prim_path="/World/envs/env_.*/Robot/.*", history_length=3, update_period=0.005, track_air_time=True
     )
