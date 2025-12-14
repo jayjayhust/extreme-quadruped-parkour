@@ -262,12 +262,12 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
         mesh_prim_paths=["/World/ground"],
     )
 
-    # Test9 reward scales (override from flat config)
+    # Test10 reward scales (override from flat config)
     base_height_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
     flat_orientation_reward_scale = 0.0 # 험지니까 몸이 엄청 기울거라서
     feet_air_time_reward_scale = 0.125 # Test4 (considering managerbased curriculum)
-    lin_vel_reward_scale = 2.5 # Test5에서는 더 크게 (considering managerbased curriculum)
-    yaw_rate_reward_scale = 2.0 # Test5에서는 더 작게 (considering managerbased curriculum)
+    lin_vel_reward_scale = 4.0 # Test10
+    yaw_rate_reward_scale = 1.0 # Test10
     z_vel_reward_scale = -0.0 # Test9 (jumping 많은 지형 고려)
     ang_vel_reward_scale = -0.05
     joint_torque_reward_scale = -2.5e-5
@@ -277,7 +277,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     torque_reward_scale = 0.0
     stop_penalty_reward_scale = 0.0
     dof_close_to_default_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
-    work_reward_scale = -0.02
+    work_reward_scale = -0.003 # Test 10 여기 수정
 
     # keep curriculum active and random commands for training
     command_mode: str = "fixed"
