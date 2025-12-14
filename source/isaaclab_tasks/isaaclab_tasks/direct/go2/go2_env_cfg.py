@@ -140,6 +140,7 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     torque_reward_scale = 0.0
     stop_penalty_reward_scale = 0.0
     dof_close_to_default_reward_scale = -0.05
+    work_reward_scale = -0.01
 
     # Training/Playing 모드 전환을 유연하게 하려고 추가한 플래그 
     ## command / curriculum settings (overridden by rough configs as needed)
@@ -276,6 +277,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     torque_reward_scale = 0.0
     stop_penalty_reward_scale = 0.0
     dof_close_to_default_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
+    work_reward_scale = -0.02
 
     # keep curriculum active and random commands for training
     command_mode: str = "fixed"
