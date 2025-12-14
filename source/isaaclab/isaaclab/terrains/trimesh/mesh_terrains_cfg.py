@@ -191,6 +191,22 @@ class MeshStairsStripTerrainCfg(SubTerrainBaseCfg):
 
 
 @configclass
+class MeshParkourStepTerrainCfg(SubTerrainBaseCfg):
+    """Configuration for a parkour-style staircase that rises then descends."""
+
+    function = mesh_terrains.parkour_step_terrain
+
+    start_platform_length: float = 3.0
+    """Run-up length before the first step (in m)."""
+    step_height_range: tuple[float, float] = (0.1, 0.45)
+    """Min/max height change per step (in m) over difficulty."""
+    step_length_base_range: tuple[float, float] = (0.3, 1.5)
+    """Base step length range; actual length = base + step_height (in m)."""
+    steps: int = 6
+    """Total number of steps (rise then fall)."""
+
+
+@configclass
 class MeshFloatingRingTerrainCfg(SubTerrainBaseCfg):
     """Configuration for a terrain with a floating ring around the center."""
 

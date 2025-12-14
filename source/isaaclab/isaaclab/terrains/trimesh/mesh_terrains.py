@@ -746,6 +746,99 @@ def stairs_strip_terrain(
     return meshes_list, origin
 
 
+def parkour_step_terrain(
+    difficulty: float, cfg: mesh_terrains_cfg.MeshParkourStepTerrainCfg
+) -> tuple[list[trimesh.Trimesh], np.ndarray]:
+    """Generate a parkour-style staircase that rises then descends along +X."""
+    meshes_list: list[trimesh.Trimesh] = []
+    ground_thickness = 0.1
+    wall_thickness = ground_thickness
+    y_center = 0.5 * cfg.size[1]
+    y_left = 0.5 * wall_thickness
+    y_right = cfg.size[1] - 0.5 * wall_thickness
+
+    # parameters
+    step_height = cfg.step_height_range[0] + difficulty * (cfg.step_height_range[1] - cfg.step_height_range[0])
+    base_len_min, base_len_max = cfg.step_length_base_range
+    steps_total = max(1, cfg.steps)
+    steps_up = steps_total // 2
+    steps_down = steps_total - steps_up
+
+    def add_side_walls(x_start: float, length: float, top_height: float):
+        """Add thin side walls to close open edges."""
+        wall_height = top_height + ground_thickness
+        if wall_height <= 0.0 or length <= 0.0:
+            return
+        z_center = 0.5 * (top_height - ground_thickness)
+        x_center = x_start + 0.5 * length
+        wall_dim = (length, wall_thickness, wall_height)
+        meshes_list.append(
+            trimesh.creation.box(wall_dim, trimesh.transformations.translation_matrix((x_center, y_left, z_center)))
+        )
+        meshes_list.append(
+            trimesh.creation.box(wall_dim, trimesh.transformations.translation_matrix((x_center, y_right, z_center)))
+        )
+
+    # initial flat platform
+    x_ptr = 0.0
+    height = 0.0
+    start_len = cfg.start_platform_length
+    start_dim = (start_len, cfg.size[1], ground_thickness)
+    start_center = (0.5 * start_len, y_center, height - 0.5 * ground_thickness)
+    meshes_list.append(trimesh.creation.box(start_dim, trimesh.transformations.translation_matrix(start_center)))
+    add_side_walls(x_ptr, start_len, height)
+    x_ptr += start_len
+
+    # ascending steps
+    for _ in range(steps_up):
+        base_len = np.random.uniform(base_len_min, base_len_max)
+        step_len = base_len + step_height
+        prev_height = height
+        height += step_height
+        dim = (step_len, cfg.size[1], ground_thickness)
+        center = (x_ptr + 0.5 * step_len, y_center, height - 0.5 * ground_thickness)
+        meshes_list.append(trimesh.creation.box(dim, trimesh.transformations.translation_matrix(center)))
+        wall_height = abs(height - prev_height)
+        if wall_height > 1e-6:
+            wall_dim = (ground_thickness, cfg.size[1], wall_height)
+            wall_center = (x_ptr + 0.5 * ground_thickness, y_center, 0.5 * (height + prev_height))
+            meshes_list.append(trimesh.creation.box(wall_dim, trimesh.transformations.translation_matrix(wall_center)))
+        add_side_walls(x_ptr, step_len, height)
+        x_ptr += step_len
+        if x_ptr >= cfg.size[0]:
+            break
+
+    # descending steps
+    for _ in range(steps_down):
+        if x_ptr >= cfg.size[0]:
+            break
+        base_len = np.random.uniform(base_len_min, base_len_max)
+        step_len = base_len + step_height
+        prev_height = height
+        height -= step_height
+        dim = (step_len, cfg.size[1], ground_thickness)
+        center = (x_ptr + 0.5 * step_len, y_center, height - 0.5 * ground_thickness)
+        meshes_list.append(trimesh.creation.box(dim, trimesh.transformations.translation_matrix(center)))
+        wall_height = abs(height - prev_height)
+        if wall_height > 1e-6:
+            wall_dim = (ground_thickness, cfg.size[1], wall_height)
+            wall_center = (x_ptr + 0.5 * ground_thickness, y_center, 0.5 * (height + prev_height))
+            meshes_list.append(trimesh.creation.box(wall_dim, trimesh.transformations.translation_matrix(wall_center)))
+        add_side_walls(x_ptr, step_len, height)
+        x_ptr += step_len
+
+    # remaining flat
+    if x_ptr < cfg.size[0]:
+        flat_len = cfg.size[0] - x_ptr
+        flat_dim = (flat_len, cfg.size[1], ground_thickness)
+        flat_center = (x_ptr + 0.5 * flat_len, y_center, height - 0.5 * ground_thickness)
+        meshes_list.append(trimesh.creation.box(flat_dim, trimesh.transformations.translation_matrix(flat_center)))
+        add_side_walls(x_ptr, flat_len, height)
+
+    origin = np.array([cfg.start_platform_length * 0.5, y_center, 0.0])
+    return meshes_list, origin
+
+
 def floating_ring_terrain(
     difficulty: float, cfg: mesh_terrains_cfg.MeshFloatingRingTerrainCfg
 ) -> tuple[list[trimesh.Trimesh], np.ndarray]:

@@ -19,6 +19,7 @@ from isaaclab.terrains.trimesh.mesh_terrains_cfg import (
     MeshDebrisTerrainCfg,
     MeshGapStripTerrainCfg,
     MeshHurdleStripTerrainCfg,
+    MeshParkourStepTerrainCfg,
     MeshStairsStripTerrainCfg,
 )
 from isaaclab.utils import configclass
@@ -178,17 +179,17 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
         terrain_generator=ROUGH_TERRAINS_CFG.replace(
             size=(23.0, 6.0),  # Terrain Size 23m X 6m -> x축으로만 직진하니까!
             num_rows=10,  # level 0~9 단계까지
-            num_cols=15,  # gap/hurdle/stairs 3컬럼씩, 나머지 2컬럼씩
+            num_cols=18,  # gap/hurdle/stairs/parkour each occupy 3 columns, others 2 columns
             sub_terrains={
-                # 15컬럼에 6타입 배치 (대체로 균등 비율)
+                # 18컬럼에 7타입 배치 (대체로 균등 비율)
                 "boxes": ROUGH_TERRAINS_CFG.sub_terrains["boxes"].replace(
-                    proportion=(2 / 15), grid_height_range=(0.025, 0.1)
+                    proportion=(2 / 18), grid_height_range=(0.025, 0.1)
                 ),
                 "random_rough": ROUGH_TERRAINS_CFG.sub_terrains["random_rough"].replace(
-                    proportion=(2 / 15), noise_range=(0.01, 0.06), noise_step=0.01
+                    proportion=(2 / 18), noise_range=(0.01, 0.06), noise_step=0.01
                 ),
                 "debris_field": MeshDebrisTerrainCfg(
-                    proportion=(2 / 15),
+                    proportion=(2 / 18),
                     size=(23.0, 23.0),
                     num_debris_min=20,
                     num_debris_max=40,
@@ -200,7 +201,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
                     cyl_length_range=(0.5, 2.0),
                 ),
                 "gap_bar": MeshGapStripTerrainCfg(
-                    proportion=(3 / 15),
+                    proportion=(3 / 18),
                     size=(23.0, 23.0),
                     gap_width_range=(0.1, 0.8),
                     landing_length=0.45,
@@ -208,7 +209,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
                 ),
                 # hurdle strip: run-up then repeated hurdles with height/gap increasing in difficulty
                 "hurdle_strip": MeshHurdleStripTerrainCfg(
-                    proportion=(3 / 15),
+                    proportion=(3 / 18),
                     size=(23.0, 23.0),
                     hurdle_height_range=(0.05, 0.3),
                     hurdle_thickness=0.2,
@@ -217,13 +218,21 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
                 ),
                 # stairs strip: run-up then up/down stair segments
                 "stairs_strip": MeshStairsStripTerrainCfg(
-                    proportion=(3 / 15),
+                    proportion=(3 / 18),
                     size=(23.0, 23.0),
                     start_platform_length=3.0,
                     segment_length=5.0,
                     step_height_range=(0.05, 0.23),
                     steps_per_segment=10,
                     pattern=("up", "down", "up", "down"),
+                ),
+                "parkour_step": MeshParkourStepTerrainCfg(
+                    proportion=(3 / 18),
+                    size=(23.0, 23.0),
+                    start_platform_length=3.0,
+                    step_height_range=(0.1, 0.45),
+                    step_length_base_range=(0.3, 1.5),
+                    steps=6,
                 ),
             },
         ),
