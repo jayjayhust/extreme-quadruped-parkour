@@ -280,7 +280,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     undesired_contact_reward_scale = -0.8 # Test4 (considering managerbased curriculum)
     torque_reward_scale = 0.0
     stop_penalty_reward_scale = 0.0
-    dof_close_to_default_reward_scale = 0.03 # Test20 (@ Extreme Parkour: 0.04)
+    dof_close_to_default_reward_scale = 0.02 # Test20 (@ Extreme Parkour: 0.04)
     work_reward_scale = -0.003 # Test 12
     hip_pos_reward_scale = -0.3  # Test20 (@ Extreme Parkour: -0.5)
     feet_stumble_reward_scale = -0.7 # Test20 (@ Extreme Parkour: -1.0)
