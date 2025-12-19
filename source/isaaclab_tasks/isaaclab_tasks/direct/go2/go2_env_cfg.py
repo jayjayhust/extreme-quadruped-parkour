@@ -283,8 +283,8 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     dof_close_to_default_reward_scale = 0.03 # Test20 (@ Extreme Parkour: 0.04)
     work_reward_scale = -0.003 # Test 12
     hip_pos_reward_scale = -0.3  # Test20 (@ Extreme Parkour: -0.5)
-    feet_stumble_reward_scale = -1.0
-    feet_stumble_ratio = 4.0
+    feet_stumble_reward_scale = -0.7 # Test20 (@ Extreme Parkour: -1.0)
+    feet_stumble_ratio = 4.0 # Reward Scale이 아니라, lateral force > 4*|vertical force| 이면 패널티 주도록
 
     # keep curriculum active and random commands for training
     command_mode: str = "fixed"
