@@ -366,9 +366,9 @@ class Go2Env(DirectRLEnv):
         joint_accel = torch.sum(torch.square(self._robot.data.joint_acc), dim=1)
         # action rate
         action_rate = torch.sum(torch.square(self._actions - self._previous_actions), dim=1)
-        # signed mechanical work (regen is credited)
+        # signed mechanical work (regen clamped out: only positive work penalized)
         joint_power = torch.sum(self._robot.data.applied_torque * self._robot.data.joint_vel, dim=1)
-        work_energy = joint_power * self.step_dt
+        work_energy = torch.clamp_min(joint_power, 0.0) * self.step_dt
         # feet air time
         first_contact = self._contact_sensor.compute_first_contact(self.step_dt)[:, self._feet_ids]
         last_air_time = self._contact_sensor.data.last_air_time[:, self._feet_ids]
