@@ -282,7 +282,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     # keep curriculum active and random commands for training
     command_mode: str = "fixed"
     use_curriculum: bool = True
-    heading_command: bool = False
+    heading_command: bool = True
 
 
 @configclass

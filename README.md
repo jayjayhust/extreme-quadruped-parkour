@@ -62,9 +62,10 @@ pip install -e source/isaaclab_tasks
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 2048 --resume --load_run 2025-10-21_21-46-39 --checkpoint model_19999.pt --max_iterations 10000 env.use_curriculum=False
 ```
-> **Rough Terrain heading alignment(default): yaw 명령이 목표 heading을 추종하도록 활성화_25_10_23**
+> **Rough Terrain heading alignment(default=ON): yaw 명령이 목표 heading을 추종하도록 활성화_25_12_20**  
+> 끄고 싶으면 `env.heading_command=False`로 덮어써 주세요.
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 4096 env.heading_command=True
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 4096
 ```
 
 #### Playing unitree GO2_direct_ours
