@@ -105,6 +105,7 @@ class Go2Env(DirectRLEnv):
                 "stop_penalty_lin",
                 "stop_penalty_ang",
                 "hip_pos",
+                "feet_stumble",
                 "dof_close_to_default",
                 "work",
             ]
@@ -419,6 +420,11 @@ class Go2Env(DirectRLEnv):
             ),
             dim=1,
         )
+        # Feet stumble: horizontal force dominates vertical support
+        net_contact_forces = self._contact_sensor.data.net_forces_w_history[:, -1, self._feet_ids]
+        horiz_force = torch.norm(net_contact_forces[..., :2], dim=2)
+        vert_force = torch.abs(net_contact_forces[..., 2])
+        stumble = torch.any(horiz_force > (self.cfg.feet_stumble_ratio * vert_force), dim=1).float()
         ##########################################################################################################
 
         rewards = {
@@ -437,6 +443,7 @@ class Go2Env(DirectRLEnv):
             "stop_penalty_lin": stop_penalty_lin * self.cfg.stop_penalty_reward_scale * self.step_dt,
             "stop_penalty_ang": stop_penalty_ang * self.cfg.stop_penalty_reward_scale * self.step_dt,
             "hip_pos": rew_hip_pos * self.cfg.hip_pos_reward_scale * self.step_dt,
+            "feet_stumble": stumble * self.cfg.feet_stumble_reward_scale * self.step_dt,
             "dof_close_to_default": (
                 rew_dof_close_to_default * self.cfg.dof_close_to_default_reward_scale * self.step_dt
             ),

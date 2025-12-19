@@ -143,6 +143,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     work_reward_scale = -0.01
     hip_pos_reward_scale = -0.5  # penalty on hip joints drifting from defaults
     hip_joint_pattern: str = ".*_hip_joint"
+    feet_stumble_reward_scale = -1.0
+    feet_stumble_ratio = 4.0  # horizontal force threshold factor vs vertical
 
     # Training/Playing 모드 전환을 유연하게 하려고 추가한 플래그 
     ## command / curriculum settings (overridden by rough configs as needed)
@@ -281,6 +283,8 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     dof_close_to_default_reward_scale = 0.03 # Test20 (@ Extreme Parkour: 0.04)
     work_reward_scale = -0.003 # Test 12
     hip_pos_reward_scale = -0.3  # Test20 (@ Extreme Parkour: -0.5)
+    feet_stumble_reward_scale = -1.0
+    feet_stumble_ratio = 4.0
 
     # keep curriculum active and random commands for training
     command_mode: str = "fixed"
