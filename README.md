@@ -67,6 +67,7 @@ pip install -e source/isaaclab_tasks
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-v0 --headless --num_envs 4096
 ```
+> 기본 헤딩 세팅: heading 범위 ±1.6 rad, 스티프니스 0.8, yaw 데드존 0.4 rad/s, yaw 클램프 ±1 rad/s, 리샘플 10초, standing 비율 0%.
 
 #### Playing unitree GO2_direct_ours
 ##### Flat Terrain Playing

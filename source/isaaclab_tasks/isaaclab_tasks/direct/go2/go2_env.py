@@ -259,6 +259,7 @@ class Go2Env(DirectRLEnv):
             yaw_command = torch.clamp(
                 self._heading_control_stiffness * heading_error, min=self._yaw_min, max=self._yaw_max
             )
+            yaw_command = torch.where(torch.abs(yaw_command) < 0.4, torch.zeros_like(yaw_command), yaw_command)
             self._commands[env_ids, 2] = yaw_command
 
         if torch.any(self._standing_env):
