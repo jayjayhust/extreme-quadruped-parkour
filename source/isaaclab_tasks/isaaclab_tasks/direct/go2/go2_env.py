@@ -37,6 +37,10 @@ class Go2Env(DirectRLEnv):
         self._dr_com = torch.zeros(self.num_envs, 3, device=self.device)
         self._dr_initialized = torch.ones(self.num_envs, dtype=torch.bool, device=self.device)
 
+        # Hip joint indices for dedicated hip position reward (pattern configurable)
+        hip_joint_pattern = getattr(self.cfg, "hip_joint_pattern", ".*_hip_joint")
+        self._hip_joint_ids, _ = self._robot.find_joints(hip_joint_pattern)
+
         # X/Y linear velocity and yaw angular velocity commands
         self._commands = torch.zeros(self.num_envs, 3, device=self.device)
         # Store command history and episode start poses for curriculum progression
@@ -100,6 +104,7 @@ class Go2Env(DirectRLEnv):
                 "torques",
                 "stop_penalty_lin",
                 "stop_penalty_ang",
+                "hip_pos",
                 "dof_close_to_default",
                 "work",
             ]
@@ -406,6 +411,14 @@ class Go2Env(DirectRLEnv):
         rew_dof_close_to_default = torch.sum(
             torch.square(self._robot.data.joint_pos - self._robot.data.default_joint_pos), dim=1
         )
+        # Hip-only deviation penalty (parkour-style)
+        rew_hip_pos = torch.sum(
+            torch.square(
+                self._robot.data.joint_pos[:, self._hip_joint_ids]
+                - self._robot.data.default_joint_pos[:, self._hip_joint_ids]
+            ),
+            dim=1,
+        )
         ##########################################################################################################
 
         rewards = {
@@ -423,6 +436,7 @@ class Go2Env(DirectRLEnv):
             "torques": rew_torque * self.cfg.torque_reward_scale * self.step_dt,
             "stop_penalty_lin": stop_penalty_lin * self.cfg.stop_penalty_reward_scale * self.step_dt,
             "stop_penalty_ang": stop_penalty_ang * self.cfg.stop_penalty_reward_scale * self.step_dt,
+            "hip_pos": rew_hip_pos * self.cfg.hip_pos_reward_scale * self.step_dt,
             "dof_close_to_default": (
                 rew_dof_close_to_default * self.cfg.dof_close_to_default_reward_scale * self.step_dt
             ),
