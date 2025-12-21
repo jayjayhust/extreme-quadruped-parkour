@@ -291,7 +291,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     use_curriculum: bool = True
     heading_command: bool = True
     # heading settings (parkour-like, but keep 10s resample + fixed 1 m/s command)
-    command_heading_range: tuple[float, float] = (-1.6, 1.6)
+    command_heading_range: tuple[float, float] = (-0.2, 0.2)
     heading_control_stiffness: float = 0.8
     rel_heading_envs: float = 1.0
     rel_standing_envs: float = 0.0
