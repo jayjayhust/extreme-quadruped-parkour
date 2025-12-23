@@ -266,12 +266,12 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
         mesh_prim_paths=["/World/ground"],
     )
 
-    # Test22 reward scales (override from flat config)
+    # Test23 reward scales (override from flat config)
     base_height_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
     flat_orientation_reward_scale = 0.0 # 험지니까 몸이 엄청 기울거라서
     feet_air_time_reward_scale = 0.125 # Test4 (considering managerbased curriculum)
-    lin_vel_reward_scale = 2.5 # Test12
-    yaw_rate_reward_scale = 2.0 # Test12
+    lin_vel_reward_scale = 3.0 # Test23
+    yaw_rate_reward_scale = 1.5 # Test23
     z_vel_reward_scale = -0.0 # Test9 (jumping 많은 지형 고려) # 참고: Extreme Parkour: -0.5
     ang_vel_reward_scale = -0.05
     joint_torque_reward_scale = -2.5e-5 # 참고: Extreme Parkour: -1.0e-5
@@ -282,8 +282,8 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     stop_penalty_reward_scale = 0.0
     dof_close_to_default_reward_scale = -0.0 # Test22 ((Hmm didn't overcome Gap so didn't consider "Extreme Parkour: -0.04")
     work_reward_scale = -0.003 # Test 12
-    hip_pos_reward_scale = -0.1  # Test22 (@ Extreme Parkour: -0.5)
-    feet_stumble_reward_scale = -0.7 # Test20 (@ Extreme Parkour: -1.0)
+    hip_pos_reward_scale = -0.0  # Test23 (@ Extreme Parkour: -0.5)
+    feet_stumble_reward_scale = -0.0 # Test23 (@ Extreme Parkour: -1.0)
     feet_stumble_ratio = 4.0 # Reward Scale이 아니라, lateral force > fleet_stumble_ratio*|vertical force| 이면 패널티 주도록(옆으로 미끌리는거 방지)
 
     # keep curriculum active and random commands for training
