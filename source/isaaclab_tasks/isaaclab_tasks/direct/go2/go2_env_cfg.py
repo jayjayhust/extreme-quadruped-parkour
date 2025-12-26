@@ -266,10 +266,10 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
         mesh_prim_paths=["/World/ground"],
     )
 
-    # Test24 reward scales (override from flat config)
+    # Test25 reward scales (override from flat config)
     base_height_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
     flat_orientation_reward_scale = 0.0 # 험지니까 몸이 엄청 기울거라서
-    feet_air_time_reward_scale = 0.0 # Test24 (@ Extreme Parkour: 0)
+    feet_air_time_reward_scale = 0.125 # Test25 (@ Extreme Parkour: 0)
     lin_vel_reward_scale = 3.0 # Test23
     yaw_rate_reward_scale = 1.5 # Test23
     z_vel_reward_scale = -0.0 # Test9 (jumping 많은 지형 고려) # 참고: Extreme Parkour: -0.5
