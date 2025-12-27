@@ -11,7 +11,7 @@ from rsl_rl.utils import resolve_nn_activation
 
 
 class ActorCriticScan(nn.Module):
-    """Actor-Critic with a shared scan encoder.
+    """Actor-Critic with a separate scan encoders.
 
     - Actor input: prop_obs + "scan_latent(encoded from raw scan)"
     - Critic input: prop_obs + priv_obs + "scan_latent(encoded from raw scan)"
