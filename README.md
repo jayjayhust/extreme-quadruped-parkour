@@ -34,17 +34,47 @@ Conclusion
 - Use scan encoding for both actor and critic
 - Avoid priv_obs encoding for critic
 
-## Train
-```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-  --task Go2-Rough-Direct-Abl3_5-v0 \
-  --num_envs 4096
-```
+## Train (for lighter training without rendering, add --headless)
+- Abl 1: Actor = prop_obs only; Critic = prop_obs + priv_obs + raw scan
+  ```bash
+  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Go2-Rough-Direct-Abl1-v0 \
+    --num_envs 4096
+  ```
 
-## Play / Validate
+- Abl 2.5: Actor = prop_obs + raw scan; Critic = prop_obs + priv_obs + raw scan
+  ```bash
+  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Go2-Rough-Direct-Abl2_5-v0 \
+    --num_envs 4096
+  ```
+
+- Abl 3.5(**Best**): Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + scan encoding
+  ```bash
+  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Go2-Rough-Direct-Abl3_5-v0 \
+    --num_envs 4096
+  ```
+
+- Abl 4.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + raw scan
+  ```bash
+  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Go2-Rough-Direct-Abl4_0-v0 \
+    --num_envs 4096
+  ```
+
+- Abl 7.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs encoding + scan encoding
+  ```bash
+  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Go2-Rough-Direct-Abl7_0-v0 \
+    --num_envs 4096
+  ```
+
+## Play / Validate (Change the Abl Number OR num_envs)
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
-  --task Go2-Rough-Direct-Abl3_5-Play-v0 \
+  --task Go2-Rough-Direct-Abl3_5-v0 \
+  --num_envs 50 \
   --load_run <run_dir_name> \
   --checkpoint <checkpoint_file>
 ```
