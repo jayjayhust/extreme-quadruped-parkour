@@ -19,9 +19,19 @@ This branch consolidates the five Parkour Step network ablations into one codeba
 ## Results Summary (Lab Meeting 04)
 Common setup
 - Terrain: 18 columns (7 types) x 10 levels; hardest tiles are Gap + Parkour Step
-- Gap final width: 0.8 m; Parkour Step final height: 0.45 m (stairs max is 0.23 m)
 - Train: 4096 envs, 20000 iterations; heading fixed (0 rad); collisions enabled
 - Reward: Test25 scale; positive-work clamp to avoid rewarding negative work
+
+Terrain types (generator mix)
+| Terrain | Description | Ranges / Params (m) |
+| --- | --- | --- |
+| boxes | scattered box bumps | bump height: 0.025-0.10 |
+| random_rough | noisy rough surface | noise amp: 0.01-0.06 (step 0.01) |
+| debris_field | sparse rocks/boxes/cylinders | count: 20-40; box L/W/T: 0.5-2.0 / 0.2-0.6 / 0.05-0.25; cyl R/L: 0.05-0.20 / 0.5-2.0 |
+| gap_bar | run-up then gaps | gap width: 0.1-0.8; landing: 0.45; run-up: 8.0 |
+| hurdle_strip | repeated hurdles | hurdle height: 0.05-0.30; gap: 0.7-2.0; thickness: 0.2; run-up: 3.0 |
+| stairs_strip | up/down stairs | step height: 0.05-0.23; segment: 5.0; steps: 10; run-up: 3.0 |
+| parkour_step | extreme stepping stones | step height: 0.1-0.45; step length: 0.3-1.5; steps: 6; run-up: 3.0 |
 
 Findings
 - Abl 3.5 yields the **best mean reward and velocity tracking**; most stable in sim on Gap + Parkour Step
