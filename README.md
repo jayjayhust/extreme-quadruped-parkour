@@ -16,6 +16,24 @@ This branch consolidates the five Parkour Step network ablations into one codeba
 - Abl 4.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + raw scan
 - Abl 7.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs encoding + scan encoding
 
+## Results Summary (Lab Meeting 04)
+Common setup
+- Terrain: 18 columns (7 types) x 10 levels; hardest tiles are Gap + Parkour Step
+- Gap final width: 0.8 m; Parkour Step final height: 0.45 m (stairs max is 0.23 m)
+- Train: 4096 envs, 20000 iterations; heading fixed (0 rad); collisions enabled
+- Reward: Test25 scale; positive-work clamp to avoid rewarding negative work
+
+Findings
+- Abl 3.5 yields the **best mean reward and velocity tracking**; most stable in sim on Gap + Parkour Step
+- Abl 1 fails due to blind walking (no scan access)
+- Abl 2.5 struggles with high-dimensional raw scan (feature extraction issue)
+- Abl 4.0 degrades due to critic receiving raw scan (noisy value estimation)
+- Abl 7.0 degrades due to priv_obs encoding (constants overfitting)
+
+Conclusion
+- Use scan encoding for both actor and critic
+- Avoid priv_obs encoding for critic
+
 ## Train
 ```bash
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
