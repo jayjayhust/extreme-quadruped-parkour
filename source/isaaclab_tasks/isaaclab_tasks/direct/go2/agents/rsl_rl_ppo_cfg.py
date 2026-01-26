@@ -114,7 +114,14 @@ class Go2RoughAbl1PPORunnerCfg(Go2RoughPPORunnerCfg):
 @configclass
 class Go2RoughAbl2_5PPORunnerCfg(Go2RoughPPORunnerCfg):
     experiment_name = "go2_rough_direct_abl2_5"
-    policy = _make_go2_rough_policy_cfg(scan_encoder_dims=[])
+    policy = RslRlPpoActorCriticCfg(
+        class_name="ActorCritic",
+        init_noise_std=1.0,
+        noise_std_type="log",
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+    )
 
 
 @configclass

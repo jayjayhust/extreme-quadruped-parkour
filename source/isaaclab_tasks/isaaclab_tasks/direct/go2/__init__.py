@@ -61,7 +61,7 @@ gym.register(
     entry_point=f"{__name__}.go2_env:Go2Env",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.go2_env_cfg:Go2RoughEnvCfg",
+        "env_cfg_entry_point": f"{__name__}.go2_env_cfg:Go2RoughAbl2_5EnvCfg",
         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:Go2RoughAbl2_5PPORunnerCfg",
     },
 )
@@ -111,7 +111,7 @@ gym.register(
     entry_point=f"{__name__}.go2_env:Go2Env",
     disable_env_checker=True,
     kwargs={
-        "env_cfg_entry_point": f"{__name__}.go2_env_cfg:Go2RoughPlayEnvCfg",
+        "env_cfg_entry_point": f"{__name__}.go2_env_cfg:Go2RoughAbl2_5PlayEnvCfg",
         "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:Go2RoughAbl2_5PPORunnerCfg",
     },
 )

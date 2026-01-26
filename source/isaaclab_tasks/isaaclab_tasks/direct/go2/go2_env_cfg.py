@@ -81,6 +81,8 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     num_scan_obs: int = 0
     use_scan_in_policy: bool = False
     use_scan_in_critic: bool = False
+    scan_first_in_policy: bool = False
+    scan_first_in_critic: bool = False
 
     # simulation
     sim: SimulationCfg = SimulationCfg(
@@ -336,3 +338,15 @@ class Go2RoughAbl1EnvCfg(Go2RoughEnvCfg):
 @configclass
 class Go2RoughAbl1PlayEnvCfg(Go2RoughPlayEnvCfg):
     use_scan_in_policy: bool = False
+
+
+@configclass
+class Go2RoughAbl2_5EnvCfg(Go2RoughEnvCfg):
+    scan_first_in_policy: bool = True
+    scan_first_in_critic: bool = True
+
+
+@configclass
+class Go2RoughAbl2_5PlayEnvCfg(Go2RoughPlayEnvCfg):
+    scan_first_in_policy: bool = True
+    scan_first_in_critic: bool = True

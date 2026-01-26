@@ -301,6 +301,8 @@ class Go2Env(DirectRLEnv):
         scan_data = height_data
         policy_scan = scan_data if self.cfg.use_scan_in_policy else None
         critic_scan = scan_data if self.cfg.use_scan_in_critic else None
+        scan_first_policy = getattr(self.cfg, "scan_first_in_policy", False)
+        scan_first_critic = getattr(self.cfg, "scan_first_in_critic", False)
 
         # Foot contact flags: 1.0 when contact force on a foot exceeds the threshold.
         net_contact_forces = self._contact_sensor.data.net_forces_w_history
@@ -323,7 +325,10 @@ class Go2Env(DirectRLEnv):
         )
         # actor obs: prop_obs + (optional) scan
         if policy_scan is not None:
-            policy_obs = torch.cat([prop_obs, policy_scan], dim=-1)
+            if scan_first_policy:
+                policy_obs = torch.cat([policy_scan, prop_obs], dim=-1)
+            else:
+                policy_obs = torch.cat([prop_obs, policy_scan], dim=-1)
         else:
             policy_obs = prop_obs
         observations = {"policy": policy_obs}
@@ -335,12 +340,15 @@ class Go2Env(DirectRLEnv):
 
         priv_obs = torch.cat([mass_com, friction_coeff, self._p_gain_scale, self._d_gain_scale], dim=-1)  # 29D
         if critic_scan is not None:
-            priv_obs_and_scan = torch.cat([priv_obs, critic_scan], dim=-1)
+            if scan_first_critic:
+                critic_obs = torch.cat([critic_scan, priv_obs, prop_obs], dim=-1)
+            else:
+                critic_obs = torch.cat([prop_obs, priv_obs, critic_scan], dim=-1)
         else:
-            priv_obs_and_scan = priv_obs
+            critic_obs = torch.cat([prop_obs, priv_obs], dim=-1)
 
-        # critic receives proprio + privileged (+ scan if available)
-        observations["critic"] = torch.cat([prop_obs, priv_obs_and_scan], dim=-1)
+        # critic receives scan-first or prop-first based on cfg
+        observations["critic"] = critic_obs
 
         # print("angular velocity x/y: ", self._robot.data.root_ang_vel_b[0,2])
 
