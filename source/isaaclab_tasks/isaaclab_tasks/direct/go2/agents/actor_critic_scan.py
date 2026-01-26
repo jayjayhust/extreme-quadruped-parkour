@@ -33,7 +33,9 @@ class ActorCriticScan(nn.Module):
         num_critic_scan_obs: int | None = None,
         actor_scan_encoder_dims=None,
         critic_scan_encoder_dims=None,
+        encode_scan_for_critic: bool = True,
         priv_obs_encoder_dims=None,
+        priv_encoder_dims=None,
         activation: str = "elu",
         init_noise_std: float = 1.0,
         noise_std_type: str = "scalar",
@@ -62,6 +64,7 @@ class ActorCriticScan(nn.Module):
             )
 
         # scan encoders (actor/critic can be configured independently)
+        self.encode_scan_for_critic = encode_scan_for_critic
         actor_scan_encoder_dims = scan_encoder_dims if actor_scan_encoder_dims is None else actor_scan_encoder_dims
         critic_scan_encoder_dims = scan_encoder_dims if critic_scan_encoder_dims is None else critic_scan_encoder_dims
 
@@ -78,14 +81,20 @@ class ActorCriticScan(nn.Module):
             self.critic_scan_latent_dim = critic_scan_encoder_dims[-1]
         else:
             self.critic_scan_encoder = None
+        self.critic_scan_input_dim = (
+            self.num_critic_scan if not self.encode_scan_for_critic else self.critic_scan_latent_dim
+        )
 
         # priv_obs encoder (critic only)
         self.priv_latent_dim = self.num_priv
-        if self.num_priv > 0 and priv_obs_encoder_dims is not None and len(priv_obs_encoder_dims) > 0:
-            self.critic_priv_encoder = self._make_encoder(self.num_priv, priv_obs_encoder_dims, activation)
+        if self.num_priv > 0 and priv_encoder_dims is not None and len(priv_encoder_dims) > 0:
+            self.priv_encoder = self._make_legacy_priv_encoder(self.num_priv, priv_encoder_dims, activation)
+            self.priv_latent_dim = priv_encoder_dims[-1]
+        elif self.num_priv > 0 and priv_obs_encoder_dims is not None and len(priv_obs_encoder_dims) > 0:
+            self.priv_encoder = self._make_encoder(self.num_priv, priv_obs_encoder_dims, activation)
             self.priv_latent_dim = priv_obs_encoder_dims[-1]
         else:
-            self.critic_priv_encoder = None
+            self.priv_encoder = None
 
         # default hidden dims
         actor_hidden_dims = actor_hidden_dims or [256, 256, 256]
@@ -97,7 +106,7 @@ class ActorCriticScan(nn.Module):
         else:
             actor_input_dim = num_actor_obs
         if self.num_critic_scan > 0:
-            critic_input_dim = self.num_prop + self.priv_latent_dim + self.critic_scan_latent_dim
+            critic_input_dim = self.num_prop + self.priv_latent_dim + self.critic_scan_input_dim
         else:
             critic_input_dim = self.num_prop + self.priv_latent_dim
 
@@ -156,6 +165,14 @@ class ActorCriticScan(nn.Module):
             in_dim = out_dim
         return nn.Sequential(*layers)
 
+    def _make_legacy_priv_encoder(self, in_dim, dims, activation):
+        layers = []
+        for out_dim in dims:
+            layers.append(nn.Linear(in_dim, out_dim))
+            layers.append(activation)
+            in_dim = out_dim
+        return nn.Sequential(*layers)
+
     def _encode_actor_scan(self, scan: torch.Tensor) -> torch.Tensor:
         if self.actor_scan_encoder is None:
             return scan
@@ -167,9 +184,19 @@ class ActorCriticScan(nn.Module):
         return self.critic_scan_encoder(scan)
 
     def _encode_priv_obs(self, priv: torch.Tensor) -> torch.Tensor:
-        if self.critic_priv_encoder is None:
+        if self.priv_encoder is None:
             return priv
-        return self.critic_priv_encoder(priv)
+        return self.priv_encoder(priv)
+
+    def load_state_dict(self, state_dict, strict: bool = True):  # noqa: D102
+        if any(key.startswith("critic_priv_encoder.") for key in state_dict.keys()):
+            remapped = dict(state_dict)
+            for key in list(remapped.keys()):
+                if key.startswith("critic_priv_encoder."):
+                    new_key = "priv_encoder." + key[len("critic_priv_encoder.") :]
+                    remapped[new_key] = remapped.pop(key)
+            state_dict = remapped
+        return super().load_state_dict(state_dict, strict=strict)
 
     def _build_actor_input(self, observations: torch.Tensor) -> torch.Tensor:
         if self.num_actor_scan <= 0:
@@ -192,7 +219,8 @@ class ActorCriticScan(nn.Module):
         obs_scan = None
         if self.num_critic_scan > 0:
             obs_scan = critic_observations[:, offset : offset + self.num_critic_scan]
-            obs_scan = self._encode_critic_scan(obs_scan)
+            if self.encode_scan_for_critic:
+                obs_scan = self._encode_critic_scan(obs_scan)
         parts = [obs_prop]
         if obs_priv is not None:
             parts.append(obs_priv)

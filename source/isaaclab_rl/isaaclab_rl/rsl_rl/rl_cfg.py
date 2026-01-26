@@ -63,8 +63,14 @@ class RslRlPpoActorCriticCfg:
     critic_scan_encoder_dims: list[int] | None = None
     """Hidden dims for critic scan encoder (optional override)."""
 
+    encode_scan_for_critic: bool = True
+    """Whether to encode scan observations for critic inputs."""
+
     priv_obs_encoder_dims: list[int] | None = None
     """Hidden dims for critic priv_obs encoder (if used)."""
+
+    priv_encoder_dims: list[int] | None = None
+    """Legacy alias for priv_obs_encoder_dims (used by older checkpoints)."""
 
 
 @configclass

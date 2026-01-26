@@ -15,8 +15,12 @@ def _make_go2_rough_policy_cfg(
     scan_encoder_dims: list[int] | None = None,
     actor_scan_encoder_dims: list[int] | None = None,
     critic_scan_encoder_dims: list[int] | None = None,
+    encode_scan_for_critic: bool = True,
     priv_obs_encoder_dims: list[int] | None = None,
+    priv_encoder_dims: list[int] | None = None,
 ) -> RslRlPpoActorCriticCfg:
+    if priv_encoder_dims is None:
+        priv_encoder_dims = priv_obs_encoder_dims
     return RslRlPpoActorCriticCfg(
         class_name="ActorCriticScan",
         init_noise_std=1.0,
@@ -31,7 +35,9 @@ def _make_go2_rough_policy_cfg(
         scan_encoder_dims=scan_encoder_dims,
         actor_scan_encoder_dims=actor_scan_encoder_dims,
         critic_scan_encoder_dims=critic_scan_encoder_dims,
+        encode_scan_for_critic=encode_scan_for_critic,
         priv_obs_encoder_dims=priv_obs_encoder_dims,
+        priv_encoder_dims=priv_encoder_dims,
     )
 
 
@@ -134,8 +140,8 @@ class Go2RoughAbl3_5PPORunnerCfg(Go2RoughPPORunnerCfg):
 class Go2RoughAbl4_0PPORunnerCfg(Go2RoughPPORunnerCfg):
     experiment_name = "go2_rough_direct_abl4_0"
     policy = _make_go2_rough_policy_cfg(
-        actor_scan_encoder_dims=[128, 64, 32],
-        critic_scan_encoder_dims=[],
+        scan_encoder_dims=[128, 64, 32],
+        encode_scan_for_critic=False,
     )
 
 
@@ -144,5 +150,5 @@ class Go2RoughAbl7_0PPORunnerCfg(Go2RoughPPORunnerCfg):
     experiment_name = "go2_rough_direct_abl7_0"
     policy = _make_go2_rough_policy_cfg(
         scan_encoder_dims=[128, 64, 32],
-        priv_obs_encoder_dims=[128, 64, 20],
+        priv_encoder_dims=[64, 20],
     )
