@@ -72,7 +72,7 @@ Terrain types (generator mix)
 | parkour_step | extreme stepping stones | step height: 0.1-0.45; step length: 0.3-1.5; steps: 6; run-up: 3.0 |
 
 Findings
-- Abl 3.5 yields the **best mean reward and velocity tracking**; most stable in sim on Gap + Parkour Step
+- Abl 3.5 yields the **best mean reward and velocity tracking**; most stable in sim on Gap + Parkour Step (Hardest Terrains)
 - Abl 1 fails due to blind walking (no scan access)
 - Abl 2.5 struggles with high-dimensional raw scan (feature extraction issue)
 - Abl 4.0 degrades due to critic receiving raw scan (noisy value estimation)
