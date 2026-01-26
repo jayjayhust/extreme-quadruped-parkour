@@ -11,10 +11,10 @@ from rsl_rl.utils import resolve_nn_activation
 
 
 class ActorCriticScan(nn.Module):
-    """Actor-Critic with a separate scan encoders.
+    """Actor-Critic with optional scan and priv_obs encoders.
 
-    - Actor input: prop_obs + "scan_latent(encoded from raw scan)"
-    - Critic input: prop_obs + priv_obs + "scan_latent(encoded from raw scan)"
+    - Actor input: prop_obs + (optional) scan_latent
+    - Critic input: prop_obs + priv_obs_or_latent + (optional) scan_latent
     """
 
     is_recurrent = False
@@ -29,6 +29,11 @@ class ActorCriticScan(nn.Module):
         scan_encoder_dims=None,
         num_prop_obs: int = 52,
         num_scan_obs: int = 187,
+        num_actor_scan_obs: int | None = None,
+        num_critic_scan_obs: int | None = None,
+        actor_scan_encoder_dims=None,
+        critic_scan_encoder_dims=None,
+        priv_obs_encoder_dims=None,
         activation: str = "elu",
         init_noise_std: float = 1.0,
         noise_std_type: str = "scalar",
@@ -46,38 +51,55 @@ class ActorCriticScan(nn.Module):
         self.num_actor_obs = num_actor_obs
         self.num_critic_obs = num_critic_obs
         self.num_prop = num_prop_obs
-        self.num_scan = max(0, num_scan_obs)
-        self.num_priv = num_critic_obs - self.num_prop - self.num_scan
+        base_scan = 0 if num_scan_obs is None else num_scan_obs
+        self.num_actor_scan = max(0, base_scan if num_actor_scan_obs is None else num_actor_scan_obs)
+        self.num_critic_scan = max(0, base_scan if num_critic_scan_obs is None else num_critic_scan_obs)
+        self.num_priv = num_critic_obs - self.num_prop - self.num_critic_scan
         if self.num_priv < 0:
             raise ValueError(
                 f"Invalid critic obs split: num_critic_obs={num_critic_obs}, "
-                f"num_prop={self.num_prop}, num_scan={self.num_scan}"
+                f"num_prop={self.num_prop}, num_scan={self.num_critic_scan}"
             )
 
-        # scan encoders (actor/critic use identical structure but learn separate weights)
-        self.scan_latent_dim = 0
-        if self.num_scan > 0 and scan_encoder_dims is not None and len(scan_encoder_dims) > 0:
-            self.actor_scan_encoder = self._make_scan_encoder(scan_encoder_dims, activation)
-            self.critic_scan_encoder = self._make_scan_encoder(scan_encoder_dims, activation)
-            self.scan_latent_dim = scan_encoder_dims[-1]
+        # scan encoders (actor/critic can be configured independently)
+        actor_scan_encoder_dims = scan_encoder_dims if actor_scan_encoder_dims is None else actor_scan_encoder_dims
+        critic_scan_encoder_dims = scan_encoder_dims if critic_scan_encoder_dims is None else critic_scan_encoder_dims
+
+        self.actor_scan_latent_dim = self.num_actor_scan
+        if self.num_actor_scan > 0 and actor_scan_encoder_dims is not None and len(actor_scan_encoder_dims) > 0:
+            self.actor_scan_encoder = self._make_encoder(self.num_actor_scan, actor_scan_encoder_dims, activation)
+            self.actor_scan_latent_dim = actor_scan_encoder_dims[-1]
         else:
             self.actor_scan_encoder = None
+
+        self.critic_scan_latent_dim = self.num_critic_scan
+        if self.num_critic_scan > 0 and critic_scan_encoder_dims is not None and len(critic_scan_encoder_dims) > 0:
+            self.critic_scan_encoder = self._make_encoder(self.num_critic_scan, critic_scan_encoder_dims, activation)
+            self.critic_scan_latent_dim = critic_scan_encoder_dims[-1]
+        else:
             self.critic_scan_encoder = None
-            self.scan_latent_dim = self.num_scan
+
+        # priv_obs encoder (critic only)
+        self.priv_latent_dim = self.num_priv
+        if self.num_priv > 0 and priv_obs_encoder_dims is not None and len(priv_obs_encoder_dims) > 0:
+            self.critic_priv_encoder = self._make_encoder(self.num_priv, priv_obs_encoder_dims, activation)
+            self.priv_latent_dim = priv_obs_encoder_dims[-1]
+        else:
+            self.critic_priv_encoder = None
 
         # default hidden dims
         actor_hidden_dims = actor_hidden_dims or [256, 256, 256]
         critic_hidden_dims = critic_hidden_dims or [256, 256, 256]
 
-        # actor/critic input dims after scan encoding
-        actor_input_dim = (
-            self.num_prop + self.scan_latent_dim if self.num_scan > 0 else num_actor_obs
-        )
-        critic_input_dim = (
-            self.num_prop + self.num_priv + self.scan_latent_dim
-            if self.num_scan > 0
-            else num_critic_obs
-        )
+        # actor/critic input dims after optional encoding
+        if self.num_actor_scan > 0:
+            actor_input_dim = self.num_prop + self.actor_scan_latent_dim
+        else:
+            actor_input_dim = num_actor_obs
+        if self.num_critic_scan > 0:
+            critic_input_dim = self.num_prop + self.priv_latent_dim + self.critic_scan_latent_dim
+        else:
+            critic_input_dim = self.num_prop + self.priv_latent_dim
 
         # Actor MLP
         actor_layers = [nn.Linear(actor_input_dim, actor_hidden_dims[0]), activation]
@@ -123,9 +145,8 @@ class ActorCriticScan(nn.Module):
     def entropy(self):
         return self.distribution.entropy().sum(dim=-1) if self.distribution is not None else None
 
-    def _make_scan_encoder(self, dims, activation):
+    def _make_encoder(self, in_dim, dims, activation):
         layers = []
-        in_dim = self.num_scan
         for i, out_dim in enumerate(dims):
             layers.append(nn.Linear(in_dim, out_dim))
             if i == len(dims) - 1:
@@ -145,24 +166,39 @@ class ActorCriticScan(nn.Module):
             return scan
         return self.critic_scan_encoder(scan)
 
+    def _encode_priv_obs(self, priv: torch.Tensor) -> torch.Tensor:
+        if self.critic_priv_encoder is None:
+            return priv
+        return self.critic_priv_encoder(priv)
+
     def _build_actor_input(self, observations: torch.Tensor) -> torch.Tensor:
-        if self.num_scan <= 0:
+        if self.num_actor_scan <= 0:
             return observations
         obs_prop = observations[:, : self.num_prop]
-        obs_scan = observations[:, self.num_prop : self.num_prop + self.num_scan] # policy obs 벡터에서 스캔 구간만 잘라내는 부분입니다. policy obs 순서는 prop(앞 52) || scan(뒤 187)이므로, 그 슬라이스로 raw scan을 떼어내
+        obs_scan = observations[:, self.num_prop : self.num_prop + self.num_actor_scan]  # prop || scan
         z_scan = self._encode_actor_scan(obs_scan)
         return torch.cat([obs_prop, z_scan], dim=-1)
 
     def _build_critic_input(self, critic_observations: torch.Tensor) -> torch.Tensor:
-        if self.num_scan <= 0:
+        if self.num_priv <= 0 and self.num_critic_scan <= 0:
             return critic_observations
         obs_prop = critic_observations[:, : self.num_prop]
-        obs_priv = critic_observations[:, self.num_prop : self.num_prop + self.num_priv]
-        obs_scan = critic_observations[
-            :, self.num_prop + self.num_priv : self.num_prop + self.num_priv + self.num_scan
-        ]
-        z_scan = self._encode_critic_scan(obs_scan)
-        return torch.cat([obs_prop, obs_priv, z_scan], dim=-1)
+        offset = self.num_prop
+        obs_priv = None
+        if self.num_priv > 0:
+            obs_priv = critic_observations[:, offset : offset + self.num_priv]
+            obs_priv = self._encode_priv_obs(obs_priv)
+            offset += self.num_priv
+        obs_scan = None
+        if self.num_critic_scan > 0:
+            obs_scan = critic_observations[:, offset : offset + self.num_critic_scan]
+            obs_scan = self._encode_critic_scan(obs_scan)
+        parts = [obs_prop]
+        if obs_priv is not None:
+            parts.append(obs_priv)
+        if obs_scan is not None:
+            parts.append(obs_scan)
+        return torch.cat(parts, dim=-1)
 
     def update_distribution(self, observations):
         obs_enc = self._build_actor_input(observations)

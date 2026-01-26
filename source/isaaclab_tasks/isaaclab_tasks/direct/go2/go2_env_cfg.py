@@ -76,6 +76,11 @@ class Go2FlatEnvCfg(DirectRLEnvCfg):
     action_space = 12
     observation_space = 52
     state_space = 81  # 52 prop + 29 priv
+    num_prop_obs: int = 52
+    num_priv_obs: int = 29
+    num_scan_obs: int = 0
+    use_scan_in_policy: bool = False
+    use_scan_in_critic: bool = False
 
     # simulation
     sim: SimulationCfg = SimulationCfg(
@@ -173,6 +178,9 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     # policy: 52 prop + 187 scan = 239; critic: 52 prop + 29 priv + 187 scan = 268
     observation_space = 239
     state_space = 268
+    num_scan_obs: int = 187
+    use_scan_in_policy: bool = True
+    use_scan_in_critic: bool = True
 
     sim: SimulationCfg = Go2FlatEnvCfg().sim.replace(
         physx=Go2FlatEnvCfg().sim.physx.replace(gpu_max_rigid_patch_count=12 * 2**15)
@@ -298,6 +306,10 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     # keep yaw clamp explicit for clarity
     command_yaw_range: tuple[float, float] = (-1.0, 1.0)
 
+    def __post_init__(self):
+        self.observation_space = self.num_prop_obs + (self.num_scan_obs if self.use_scan_in_policy else 0)
+        self.state_space = self.num_prop_obs + self.num_priv_obs + (self.num_scan_obs if self.use_scan_in_critic else 0)
+
 
 @configclass
 class Go2RoughPlayEnvCfg(Go2RoughEnvCfg):
@@ -314,3 +326,13 @@ class Go2RoughPlayEnvCfg(Go2RoughEnvCfg):
     terrain = Go2RoughEnvCfg().terrain.replace(
         terrain_generator=ROUGH_TERRAINS_CFG.replace(curriculum=False, seed=424242)
     )
+
+
+@configclass
+class Go2RoughAbl1EnvCfg(Go2RoughEnvCfg):
+    use_scan_in_policy: bool = False
+
+
+@configclass
+class Go2RoughAbl1PlayEnvCfg(Go2RoughPlayEnvCfg):
+    use_scan_in_policy: bool = False

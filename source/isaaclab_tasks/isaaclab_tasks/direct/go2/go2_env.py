@@ -298,7 +298,9 @@ class Go2Env(DirectRLEnv):
             height_data = (
                 self._height_scanner.data.pos_w[:, 2].unsqueeze(1) - self._height_scanner.data.ray_hits_w[..., 2] - 0.5
             ).clip(-1.0, 1.0)
-        priv_scan = height_data
+        scan_data = height_data
+        policy_scan = scan_data if self.cfg.use_scan_in_policy else None
+        critic_scan = scan_data if self.cfg.use_scan_in_critic else None
 
         # Foot contact flags: 1.0 when contact force on a foot exceeds the threshold.
         net_contact_forces = self._contact_sensor.data.net_forces_w_history
@@ -319,9 +321,9 @@ class Go2Env(DirectRLEnv):
             ],
             dim=-1,
         )
-        # actor obs: prop_obs + (optional) priv_scan
-        if priv_scan is not None:
-            policy_obs = torch.cat([prop_obs, priv_scan], dim=-1)
+        # actor obs: prop_obs + (optional) scan
+        if policy_scan is not None:
+            policy_obs = torch.cat([prop_obs, policy_scan], dim=-1)
         else:
             policy_obs = prop_obs
         observations = {"policy": policy_obs}
@@ -332,8 +334,8 @@ class Go2Env(DirectRLEnv):
         friction_coeff = self._dr_friction
 
         priv_obs = torch.cat([mass_com, friction_coeff, self._p_gain_scale, self._d_gain_scale], dim=-1)  # 29D
-        if priv_scan is not None:
-            priv_obs_and_scan = torch.cat([priv_obs, priv_scan], dim=-1)
+        if critic_scan is not None:
+            priv_obs_and_scan = torch.cat([priv_obs, critic_scan], dim=-1)
         else:
             priv_obs_and_scan = priv_obs
 

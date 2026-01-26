@@ -8,6 +8,33 @@ from isaaclab.utils import configclass
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 
 
+def _make_go2_rough_policy_cfg(
+    *,
+    num_actor_scan_obs: int | None = None,
+    num_critic_scan_obs: int | None = None,
+    scan_encoder_dims: list[int] | None = None,
+    actor_scan_encoder_dims: list[int] | None = None,
+    critic_scan_encoder_dims: list[int] | None = None,
+    priv_obs_encoder_dims: list[int] | None = None,
+) -> RslRlPpoActorCriticCfg:
+    return RslRlPpoActorCriticCfg(
+        class_name="ActorCriticScan",
+        init_noise_std=1.0,
+        noise_std_type="log",
+        actor_hidden_dims=[512, 256, 128],
+        critic_hidden_dims=[512, 256, 128],
+        activation="elu",
+        num_prop_obs=52,
+        num_scan_obs=187,
+        num_actor_scan_obs=num_actor_scan_obs,
+        num_critic_scan_obs=num_critic_scan_obs,
+        scan_encoder_dims=scan_encoder_dims,
+        actor_scan_encoder_dims=actor_scan_encoder_dims,
+        critic_scan_encoder_dims=critic_scan_encoder_dims,
+        priv_obs_encoder_dims=priv_obs_encoder_dims,
+    )
+
+
 @configclass
 class Go2FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
@@ -75,4 +102,40 @@ class Go2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         lam=0.95,
         desired_kl=0.01,
         max_grad_norm=1.0,
+    )
+
+
+@configclass
+class Go2RoughAbl1PPORunnerCfg(Go2RoughPPORunnerCfg):
+    experiment_name = "go2_rough_direct_abl1"
+    policy = _make_go2_rough_policy_cfg(num_actor_scan_obs=0)
+
+
+@configclass
+class Go2RoughAbl2_5PPORunnerCfg(Go2RoughPPORunnerCfg):
+    experiment_name = "go2_rough_direct_abl2_5"
+    policy = _make_go2_rough_policy_cfg(scan_encoder_dims=[])
+
+
+@configclass
+class Go2RoughAbl3_5PPORunnerCfg(Go2RoughPPORunnerCfg):
+    experiment_name = "go2_rough_direct_abl3_5"
+    policy = _make_go2_rough_policy_cfg(scan_encoder_dims=[128, 64, 32])
+
+
+@configclass
+class Go2RoughAbl4_0PPORunnerCfg(Go2RoughPPORunnerCfg):
+    experiment_name = "go2_rough_direct_abl4_0"
+    policy = _make_go2_rough_policy_cfg(
+        actor_scan_encoder_dims=[128, 64, 32],
+        critic_scan_encoder_dims=[],
+    )
+
+
+@configclass
+class Go2RoughAbl7_0PPORunnerCfg(Go2RoughPPORunnerCfg):
+    experiment_name = "go2_rough_direct_abl7_0"
+    policy = _make_go2_rough_policy_cfg(
+        scan_encoder_dims=[128, 64, 32],
+        priv_obs_encoder_dims=[128, 64, 20],
     )
