@@ -3,11 +3,11 @@
 This branch consolidates the five Parkour Step network ablations into one codebase and exposes them as task IDs.
 
 ## Task IDs (Train / Play)
-- Abl 1: `Go2-Rough-Direct-Abl1-v0` / `Go2-Rough-Direct-Abl1-Play-v0`
-- Abl 2.5: `Go2-Rough-Direct-Abl2_5-v0` / `Go2-Rough-Direct-Abl2_5-Play-v0`
-- Abl 3.5: `Go2-Rough-Direct-Abl3_5-v0` / `Go2-Rough-Direct-Abl3_5-Play-v0`
-- Abl 4.0: `Go2-Rough-Direct-Abl4_0-v0` / `Go2-Rough-Direct-Abl4_0-Play-v0`
-- Abl 7.0: `Go2-Rough-Direct-Abl7_0-v0` / `Go2-Rough-Direct-Abl7_0-Play-v0`
+- Abl 1: `Go2-Rough-Direct-Abl1-v0` 
+- Abl 2.5: `Go2-Rough-Direct-Abl2_5-v0` 
+- Abl 3.5: `Go2-Rough-Direct-Abl3_5-v0` 
+- Abl 4.0: `Go2-Rough-Direct-Abl4_0-v0` 
+- Abl 7.0: `Go2-Rough-Direct-Abl7_0-v0` 
 
 ## Ablation Mapping
 - Abl 1: Actor = prop_obs only; Critic = prop_obs + priv_obs + raw scan
@@ -16,10 +16,48 @@ This branch consolidates the five Parkour Step network ablations into one codeba
 - Abl 4.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + raw scan
 - Abl 7.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs encoding + scan encoding
 
-## Results Summary (Lab Meeting 04)
+## Prerequisites
+- Isaac Lab 2.2.0 (see `VERSION`) and a compatible Isaac Sim install
+- Python 3.11 (see `environment.yml`)
+- GPU recommended; 4096 envs is heavy, reduce `--num_envs` if needed
+- Optional visuals: set `NVIDIA_NUCLEUS_DIR` to resolve the terrain material MDL path
+
+## Setup
+```bash
+./isaaclab.sh -c
+./isaaclab.sh -i
+```
+Use your existing Isaac Lab environment if you already have one configured.
+
+## Project Layout
+- `source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py`: terrain generator, reward scales, curriculum/command defaults, ablation env toggles
+- `source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py`: observations, rewards, curriculum logic, DR buffers
+- `source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py`: PPO runner configs, ablation policies, experiment names
+- `source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/actor_critic_scan.py`: scan and priv_obs encoder model
+- `source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py`: Gym task registrations
+
+## Observation and Reward Specs
+Obs dimensions
+- prop_obs: 52D (joint pos(12D)/vel(12D), projected gravity(3D), root lin vel(3D)/ang vel(3D), commands(3D), last action(12D), foot contacts(4D))
+- priv_obs (critic only): 29D (mass(1D), COM(3D), friction coeff(1D), P gain scale(12D), D gain scale(12D))
+- scan_obs: 187D height grid (1.6 x 1.0 m, 0.1 m resolution)
+
+Ordering
+- Default: policy = prop || scan; critic = prop || priv || scan
+- Abl 2.5: scan-first for both policy and critic
+
+Rewards
+- Tracking + penalties with a positive-work clamp (only positive work is penalized)
+- Base height uses mean ground height on rough terrain
+
+## Notes
+- Training defaults: fixed command (1.0, 0.0, 0.0) with heading range fixed to 0; change in `Go2RoughEnvCfg` if needed
+- Play config exists (curriculum off, seed 424242), but experiments here used training task IDs instead of the `-Play` tasks
+
+## Results Summary 
 Common setup
 - Terrain: 18 columns (7 types) x 10 levels; hardest tiles are Gap + Parkour Step
-- Train: 4096 envs, 20000 iterations; heading fixed (0 rad); collisions enabled
+- Train: 4096 envs, 20000 iterations; heading fixed (0 rad); collisions enabled; curriculum learning
 - Reward: Test25 scale; positive-work clamp to avoid rewarding negative work
 
 Terrain types (generator mix)
@@ -89,5 +127,6 @@ Conclusion
   --checkpoint <checkpoint_file>
 ```
 
-Logs land under `logs/rsl_rl/<experiment_name>/` (see runner config names in
-`source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py`).
+## Logs and Checkpoints
+- Logs: `logs/rsl_rl/<experiment_name>/` (see `source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py`)
+- Use `--load_run` and `--checkpoint` with `play.py` to evaluate a specific run
