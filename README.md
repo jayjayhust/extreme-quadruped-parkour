@@ -67,7 +67,7 @@ This study is informed by prior work on rough-terrain locomotion and parkour.
 - Extreme Parkour Network diagram summary (Google Drive, access required):
   https://drive.google.com/file/d/1aBpNZQSTxw7dldBADfKyijppc1p9bI52/view?usp=drive_link
 
-## Ablation 3.5 (Best) — Videos
+## Ablation 3.5 (Best) — Videos on Hardest Terrains
 - Parkour Step (level 9)
 <video controls muted loop playsinline src="assets/videos/abl3_5_parkour_step_lvl9.webm"></video>
 
