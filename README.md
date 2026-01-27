@@ -61,6 +61,12 @@ This study is informed by prior work on rough-terrain locomotion and parkour.
 - RMA: Rapid Motor Adaptation for Legged Robots (arXiv 2107.04034): https://arxiv.org/abs/2107.04034
   - Project page: https://ashish-kmr.github.io/rma-legged-robots/
 
+## Supplementary Notes (personal)
+- RMA network analysis (personal Notion notes, access required):
+  https://www.notion.so/25-11-19-RMA-Network-Analysis_Yobel-2f5e984087b58013b2dacfeee267bea0?source=copy_link
+- Extreme Parkour diagram summary (Google Drive, access required):
+  https://drive.google.com/file/d/1aBpNZQSTxw7dldBADfKyijppc1p9bI52/view?usp=drive_link
+
 ## Results Summary 
 Common setup
 - Terrain: 18 columns (7 types) x 10 levels; hardest tiles are Gap + Parkour Step
