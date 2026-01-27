@@ -54,6 +54,13 @@ Rewards
 - Training defaults: fixed command (1.0, 0.0, 0.0) with heading range fixed to 0; change in `Go2RoughEnvCfg` if needed
 - Play config exists (curriculum off, seed 424242), but experiments here used training task IDs instead of the `-Play` tasks
 
+## Related Work / References
+This study is informed by prior work on rough-terrain locomotion and parkour.
+- Extreme Parkour with Legged Robots (arXiv 2309.14341): https://arxiv.org/abs/2309.14341
+  - Project page: https://extreme-parkour.github.io/
+- RMA: Rapid Motor Adaptation for Legged Robots (arXiv 2107.04034): https://arxiv.org/abs/2107.04034
+  - Project page: https://ashish-kmr.github.io/rma-legged-robots/
+
 ## Results Summary 
 Common setup
 - Terrain: 18 columns (7 types) x 10 levels; hardest tiles are Gap + Parkour Step
