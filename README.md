@@ -146,6 +146,7 @@ Conclusion
   --load_run <run_dir_name> \
   --checkpoint <checkpoint_file>
 ```
+> Notes : You can change the max_init_terrain_level just by adding "env.terrain.max_init_terrain_level=9"
 
 ## Logs and Checkpoints
 - Logs: `logs/rsl_rl/<experiment_name>/` (see `source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py`)
