@@ -62,17 +62,17 @@ This study is informed by prior work on rough-terrain locomotion and parkour.
   - Project page: https://ashish-kmr.github.io/rma-legged-robots/
 
 ## Supplementary Notes (personal)
-- RMA network analysis (personal Notion notes, access required):
+- RMA Network analysis (personal Notion notes, access required):
   https://www.notion.so/25-11-19-RMA-Network-Analysis_Yobel-2f5e984087b58013b2dacfeee267bea0?source=copy_link
 - Extreme Parkour Network diagram summary (Google Drive, access required):
   https://drive.google.com/file/d/1aBpNZQSTxw7dldBADfKyijppc1p9bI52/view?usp=drive_link
 
 ## Ablation 3.5 (Best) — Videos on Hardest Terrains
 - Parkour Step (level 9)
-<video controls muted loop playsinline src="assets/videos/abl3_5_parkour_step_lvl9.webm"></video>
+![Abl3.5 Parkour Step level 9](assets/videos/Abl3.5.%20Parkour%20Step_level=9.gif)
 
 - Gap (level 9)
-<video controls muted loop playsinline src="assets/videos/abl3_5_gap_lvl9.webm"></video>
+![Abl3.5 Gap level 9](assets/videos/Abl3.5.%20GAP_level=9.gif)
 
 ## Results Summary 
 Common setup
