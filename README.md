@@ -16,6 +16,17 @@ This branch consolidates the five Parkour Step network ablations into one codeba
 - Abl 4.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + raw scan
 - Abl 7.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs encoding + scan encoding
 
+## Network Diagrams
+Ablation-specific network diagrams are shown below.
+
+| Abl 1 | Abl 2.5 | Abl 3.5 |
+| --- | --- | --- |
+| <a href="assets/diagrams/Abl1-NetworkDiagram.jpg"><img src="assets/diagrams/Abl1-NetworkDiagram.jpg" alt="Abl 1 Network Diagram" height="220"/></a> | <a href="assets/diagrams/Abl2.5-NetworkDiagram.jpg"><img src="assets/diagrams/Abl2.5-NetworkDiagram.jpg" alt="Abl 2.5 Network Diagram" height="220"/></a> | <a href="assets/diagrams/Abl3.5-NetworkDiagram.jpg"><img src="assets/diagrams/Abl3.5-NetworkDiagram.jpg" alt="Abl 3.5 Network Diagram" height="220"/></a> |
+
+| Abl 4.0 | Abl 7.0 |  |
+| --- | --- | --- |
+| <a href="assets/diagrams/Abl4.0-NetworkDiagram.jpg"><img src="assets/diagrams/Abl4.0-NetworkDiagram.jpg" alt="Abl 4.0 Network Diagram" height="220"/></a> | <a href="assets/diagrams/Abl7.0-NetworkDiagram.jpg"><img src="assets/diagrams/Abl7.0-NetworkDiagram.jpg" alt="Abl 7.0 Network Diagram" height="220"/></a> | &nbsp; |
+
 ## Prerequisites
 - Isaac Lab 2.2.0 (see `VERSION`) and a compatible Isaac Sim install
 - Python 3.11 (see `environment.yml`)
