@@ -68,6 +68,7 @@ This study is informed by prior work on rough-terrain locomotion and parkour.
   https://drive.google.com/file/d/1aBpNZQSTxw7dldBADfKyijppc1p9bI52/view?usp=drive_link
 
 ## Ablation 3.5 (Best) — Videos on Hardest Terrains
+Representative clips are shown below. Full-length videos are available in [assets/videos](assets/videos), or via the [YouTube playlist](https://youtube.com/playlist?list=PLMfdNA5tlSuF_zqpKWSvuehUrbpUF3B6v&si=zDtuemx5VZ0MdzE0).
 - Parkour Step (level 9)
   - ![Abl3.5 Parkour Step level 9](assets/videos/Abl3.5.%20Parkour%20Step_level=9.gif)
 
