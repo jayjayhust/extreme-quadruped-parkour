@@ -2,12 +2,12 @@
 
 This branch consolidates the five Parkour Step network ablations into one codebase and exposes them as task IDs.
 
-## Task IDs (Train / Play)
-- Abl 1: `Go2-Rough-Direct-Abl1-v0` 
-- Abl 2.5: `Go2-Rough-Direct-Abl2_5-v0` 
-- Abl 3.5: `Go2-Rough-Direct-Abl3_5-v0` 
-- Abl 4.0: `Go2-Rough-Direct-Abl4_0-v0` 
-- Abl 7.0: `Go2-Rough-Direct-Abl7_0-v0` 
+## Task IDs (Train)
+- Abl 1: `Go2-Rough-Direct-Abl1-v0`
+- Abl 2.5: `Go2-Rough-Direct-Abl2_5-v0`
+- Abl 3.5: `Go2-Rough-Direct-Abl3_5-v0`
+- Abl 4.0: `Go2-Rough-Direct-Abl4_0-v0`
+- Abl 7.0: `Go2-Rough-Direct-Abl7_0-v0`
 
 ## Ablation Mapping
 - Abl 1: Actor = prop_obs only; Critic = prop_obs + priv_obs + raw scan
@@ -79,14 +79,16 @@ This study is informed by prior work on rough-terrain locomotion and parkour.
   https://drive.google.com/file/d/1aBpNZQSTxw7dldBADfKyijppc1p9bI52/view?usp=drive_link
 
 ## Ablation 3.5 (Best) — Videos on Hardest Terrains
-Representative clips are shown below. Full-length videos are available in [assets/videos](assets/videos), or via the [YouTube playlist](https://youtube.com/playlist?list=PLMfdNA5tlSuF_zqpKWSvuehUrbpUF3B6v&si=zDtuemx5VZ0MdzE0).
+Representative clips are shown below. **All terrain clips (Boxes/Noisy/Debris/Gap/Hurdle/Stairs/Parkour Step) for each ablation**
+are organized under `assets/videos/Abl1.0`, `Abl2.5`, `Abl3.5`, `Abl4.0`, `Abl7.0` (both `.webm` and `.mov` available).
+The [YouTube playlist](https://youtube.com/playlist?list=PLMfdNA5tlSuF_zqpKWSvuehUrbpUF3B6v&si=zDtuemx5VZ0MdzE0) only includes the comparison terrains (Parkour Step + Gap).
 - Parkour Step (level 9)
-  - ![Abl3.5 Parkour Step level 9](assets/videos/Abl3.5.%20Parkour%20Step_level=9.gif)
+  - ![Abl3.5 Parkour Step level 9](assets/videos/Abl3.5/Abl3.5.%20Parkour%20Step_level=9.gif)
 
 - Gap (level 9)
-  - ![Abl3.5 Gap level 9](assets/videos/Abl3.5.%20GAP_level=9.gif)
+  - ![Abl3.5 Gap level 9](assets/videos/Abl3.5/Abl3.5.%20GAP_level=9.gif)
 
-## Results Summary 
+## Results Summary
 Common setup
 - Terrain: 18 columns (7 types) x 10 levels; hardest tiles are Gap + Parkour Step
 - Train: 4096 envs, 20000 iterations; heading fixed (0 rad); collisions enabled; curriculum learning
@@ -129,7 +131,7 @@ Conclusion
     --num_envs 4096
   ```
 
-- Abl 3.5(**Best**): Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + scan encoding
+- Abl 3.5 (**Best**): Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + scan encoding
   ```bash
   ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
     --task Go2-Rough-Direct-Abl3_5-v0 \
@@ -158,7 +160,9 @@ Conclusion
   --load_run <run_dir_name> \
   --checkpoint <checkpoint_file>
 ```
-> Notes : You can change the max_init_terrain_level just by adding "env.terrain.max_init_terrain_level=9"
+Notes:
+- Change `max_init_terrain_level` by adding `env.terrain.max_init_terrain_level=9`.
+- For fixed hurdle spacing, add `env.terrain.terrain_generator.sub_terrains.hurdle_strip.hurdle_gap_range="[1.4, 1.4]"`.
 
 ## Logs and Checkpoints
 - Logs: `logs/rsl_rl/<experiment_name>/` (see `source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py`)
