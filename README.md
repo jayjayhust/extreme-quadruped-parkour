@@ -35,7 +35,8 @@ Ablation-specific network diagrams are shown below.
 
 ## Setup
 ```bash
-./isaaclab.sh -c
+./isaaclab.sh -c env_isaaclab_2p2
+pip install "isaacsim[all,extscache]==5.0.0" --extra-index-url https://pypi.nvidia.com
 ./isaaclab.sh -i
 ```
 Use your existing Isaac Lab environment if you already have one configured.
@@ -116,47 +117,43 @@ Conclusion
 - Use scan encoding for both actor and critic
 - Avoid priv_obs encoding for critic
 
+## Useful scripts
+```bash
+./isaaclab.sh -p scripts/environments/list_envs.py
+
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-Cartpole-Direct-v0 --num_envs 4096 --headless
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Isaac-Navigation-Flat-Anymal-C-v0 --num_envs 4096 --headless
+```
+
 ## Train (for lighter training without rendering, add --headless)
 - Abl 1: Actor = prop_obs only; Critic = prop_obs + priv_obs + raw scan
-  ```bash
-  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Go2-Rough-Direct-Abl1-v0 \
-    --num_envs 4096
-  ```
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-Abl1-v0 --num_envs 4096
+```
 
 - Abl 2.5: Actor = prop_obs + raw scan; Critic = prop_obs + priv_obs + raw scan
-  ```bash
-  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Go2-Rough-Direct-Abl2_5-v0 \
-    --num_envs 4096
-  ```
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-Abl2_5-v0 --num_envs 4096 --headless
+```
 
 - Abl 3.5 (**Best**): Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + scan encoding
-  ```bash
-  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Go2-Rough-Direct-Abl3_5-v0 \
-    --num_envs 4096
-  ```
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-Abl3_5-v0 --num_envs 4096 --headless
+```
 
 - Abl 4.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + raw scan
-  ```bash
-  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Go2-Rough-Direct-Abl4_0-v0 \
-    --num_envs 4096
-  ```
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-Abl4_0-v0 --num_envs 4096 --headless
+```
 
 - Abl 7.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs encoding + scan encoding
-  ```bash
-  ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py \
-    --task Go2-Rough-Direct-Abl7_0-v0 \
-    --num_envs 4096
-  ```
+```bash
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-Abl7_0-v0 --num_envs 4096 --headless
+```
 
 ## Play / Validate (Change the Abl Number OR num_envs)
 ```bash
-./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py \
-  --task Go2-Rough-Direct-Abl3_5-v0 \
-  --num_envs 50 \
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Abl3_5-v0 --num_envs 50 \
   --load_run <run_dir_name> \
   --checkpoint <checkpoint_file>
 ```

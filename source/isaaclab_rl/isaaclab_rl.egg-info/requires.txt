@@ -9,20 +9,20 @@ moviepy
 pillow==11.2.1
 
 [all]
-skrl>=1.4.3
-tqdm
-rl-games@ git+https://github.com/isaac-sim/rl_games.git@python3.11
-gym
 rsl-rl-lib==2.3.3
-rich
+rl-games @ git+https://github.com/isaac-sim/rl_games.git@python3.11
+gym
 stable-baselines3>=2.6
+tqdm
+skrl>=1.4.3
+rich
 
 [rl-games]
-rl-games@ git+https://github.com/isaac-sim/rl_games.git@python3.11
+rl-games @ git+https://github.com/isaac-sim/rl_games.git@python3.11
 gym
 
 [rl_games]
-rl-games@ git+https://github.com/isaac-sim/rl_games.git@python3.11
+rl-games @ git+https://github.com/isaac-sim/rl_games.git@python3.11
 gym
 
 [rsl-rl]
