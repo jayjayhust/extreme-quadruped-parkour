@@ -36,6 +36,7 @@ Ablation-specific network diagrams are shown below.
 ## Setup
 ```bash
 ./isaaclab.sh -c env_isaaclab_2p2
+conda activate env_isaaclab_2p2
 pip install "isaacsim[all,extscache]==5.0.0" --extra-index-url https://pypi.nvidia.com
 ./isaaclab.sh -i
 ```
