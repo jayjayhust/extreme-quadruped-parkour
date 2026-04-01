@@ -33,7 +33,7 @@ Ablation-specific network diagrams are shown below.
 - GPU recommended; 4096 envs is heavy, reduce `--num_envs` if needed
 - Optional visuals: set `NVIDIA_NUCLEUS_DIR` to resolve the terrain material MDL path
 
-## Setup
+## Setup(isaacsim 5.0.0 and isaaclab 2.0.0)
 ```bash
 ./isaaclab.sh -c env_isaaclab_2p2
 conda activate env_isaaclab_2p2
