@@ -53,7 +53,7 @@ Use your existing Isaac Lab environment if you already have one configured.
 Obs dimensions
 - prop_obs: 52D (joint pos(12D)/vel(12D), projected gravity(3D), root lin vel(3D)/ang vel(3D), commands(3D), last action(12D), foot contacts(4D))
 - priv_obs (critic only): 29D (mass(1D), COM(3D), friction coeff(1D), P gain scale(12D), D gain scale(12D))
-- scan_obs: 187D height grid (1.6 x 1.0 m, 0.1 m resolution)
+- scan_obs: 187D height grid (1.6 x 1.0 m, 0.1 m resolution, so dot array is 17*11, total dots number 187D)
 
 Ordering
 - Default: policy = prop || scan; critic = prop || priv || scan
