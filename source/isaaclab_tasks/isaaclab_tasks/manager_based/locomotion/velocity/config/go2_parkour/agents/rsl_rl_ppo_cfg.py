@@ -3,12 +3,17 @@
 #
 # SPDX-License-Identifier: BSD-3-Clause
 
+"""RSL-RL PPO runner configs for Go2 parkour manager-based environments.
+
+These mirror the direct Go2 agent configs, using ActorCriticScan for scan encoding.
+"""
+
 from isaaclab.utils import configclass
 
 from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, RslRlPpoAlgorithmCfg
 
 
-def _make_go2_rough_policy_cfg(
+def _make_go2_parkour_rough_policy_cfg(
     *,
     num_actor_scan_obs: int | None = None,
     num_critic_scan_obs: int | None = None,
@@ -28,8 +33,8 @@ def _make_go2_rough_policy_cfg(
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
-        num_prop_obs=52,  # 52D
-        num_scan_obs=187,  # 187D
+        num_prop_obs=52,
+        num_scan_obs=187,
         num_actor_scan_obs=num_actor_scan_obs,
         num_critic_scan_obs=num_critic_scan_obs,
         scan_encoder_dims=scan_encoder_dims,
@@ -42,21 +47,21 @@ def _make_go2_rough_policy_cfg(
 
 
 @configclass
-class Go2FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+class Go2ParkourFlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 5000 # 원래 500이 기본이었는데 너무 짧아서 학습 엉망 go2 철푸덕해버림
+    max_iterations = 5000
     save_interval = 50
-    experiment_name = "go2_flat_direct"
+    experiment_name = "go2_parkour_flat"
     empirical_normalization = True
     policy = RslRlPpoActorCriticCfg(
         class_name="ActorCriticScan",
-        init_noise_std= 0.5,
+        init_noise_std=0.5,
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
-        noise_std_type='log',
-        num_prop_obs=52,  # 52D
-        num_scan_obs=0,  # 0D
+        noise_std_type="log",
+        num_prop_obs=52,
+        num_scan_obs=0,
         scan_encoder_dims=[128, 64, 32],
     )
     algorithm = RslRlPpoAlgorithmCfg(
@@ -76,14 +81,12 @@ class Go2FlatPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 
 
 @configclass
-class Go2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
+class Go2ParkourRoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     num_steps_per_env = 24
-    max_iterations = 20000 # 모든 Abl 다 20000 통일
+    max_iterations = 20000
     save_interval = 50
-    experiment_name = "go2_rough_direct"
-    empirical_normalization = True # Default는 False였는데, 대걸님꺼에 맞춰봄
-
-    # init_noise_std, noise_std_type은 Actor network가 출력한 mean에 더해주는 "std"를 학습할 때 사용하는 변수
+    experiment_name = "go2_parkour_rough"
+    empirical_normalization = True
     policy = RslRlPpoActorCriticCfg(
         class_name="ActorCriticScan",
         init_noise_std=1.0,
@@ -91,9 +94,9 @@ class Go2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
         actor_hidden_dims=[512, 256, 128],
         critic_hidden_dims=[512, 256, 128],
         activation="elu",
-        num_prop_obs=52,  # 52D
-        num_scan_obs=187,  # 187D
-        scan_encoder_dims=[128, 64, 32],  # 187D->32D
+        num_prop_obs=52,
+        num_scan_obs=187,
+        scan_encoder_dims=[128, 64, 32],
     )
     algorithm = RslRlPpoAlgorithmCfg(
         value_loss_coef=1.0,
@@ -112,14 +115,14 @@ class Go2RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
 
 
 @configclass
-class Go2RoughAbl1PPORunnerCfg(Go2RoughPPORunnerCfg):
-    experiment_name = "go2_rough_direct_abl1"
-    policy = _make_go2_rough_policy_cfg(num_actor_scan_obs=0)
+class Go2ParkourRoughAbl1PPORunnerCfg(Go2ParkourRoughPPORunnerCfg):
+    experiment_name = "go2_parkour_rough_abl1"
+    policy = _make_go2_parkour_rough_policy_cfg(num_actor_scan_obs=0)
 
 
 @configclass
-class Go2RoughAbl2_5PPORunnerCfg(Go2RoughPPORunnerCfg):
-    experiment_name = "go2_rough_direct_abl2_5"
+class Go2ParkourRoughAbl2_5PPORunnerCfg(Go2ParkourRoughPPORunnerCfg):
+    experiment_name = "go2_parkour_rough_abl2_5"
     policy = RslRlPpoActorCriticCfg(
         class_name="ActorCritic",
         init_noise_std=1.0,
@@ -131,24 +134,24 @@ class Go2RoughAbl2_5PPORunnerCfg(Go2RoughPPORunnerCfg):
 
 
 @configclass
-class Go2RoughAbl3_5PPORunnerCfg(Go2RoughPPORunnerCfg):
-    experiment_name = "go2_rough_direct_abl3_5"
-    policy = _make_go2_rough_policy_cfg(scan_encoder_dims=[128, 64, 32])  # 187D->32D
+class Go2ParkourRoughAbl3_5PPORunnerCfg(Go2ParkourRoughPPORunnerCfg):
+    experiment_name = "go2_parkour_rough_abl3_5"
+    policy = _make_go2_parkour_rough_policy_cfg(scan_encoder_dims=[128, 64, 32])
 
 
 @configclass
-class Go2RoughAbl4_0PPORunnerCfg(Go2RoughPPORunnerCfg):
-    experiment_name = "go2_rough_direct_abl4_0"
-    policy = _make_go2_rough_policy_cfg(
-        scan_encoder_dims=[128, 64, 32],  # 187D->32D
+class Go2ParkourRoughAbl4_0PPORunnerCfg(Go2ParkourRoughPPORunnerCfg):
+    experiment_name = "go2_parkour_rough_abl4_0"
+    policy = _make_go2_parkour_rough_policy_cfg(
+        scan_encoder_dims=[128, 64, 32],
         encode_scan_for_critic=False,
     )
 
 
 @configclass
-class Go2RoughAbl7_0PPORunnerCfg(Go2RoughPPORunnerCfg):
-    experiment_name = "go2_rough_direct_abl7_0"
-    policy = _make_go2_rough_policy_cfg(
-        scan_encoder_dims=[128, 64, 32],  # 187D->32D
+class Go2ParkourRoughAbl7_0PPORunnerCfg(Go2ParkourRoughPPORunnerCfg):
+    experiment_name = "go2_parkour_rough_abl7_0"
+    policy = _make_go2_parkour_rough_policy_cfg(
+        scan_encoder_dims=[128, 64, 32],
         priv_encoder_dims=[64, 20],
     )

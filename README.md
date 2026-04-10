@@ -139,7 +139,12 @@ Conclusion
 
 - Abl 3.5 (**Best**): Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + scan encoding
 ```bash
+# direct
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Rough-Direct-Abl3_5-v0 --num_envs 4096 --headless
+
+# manager_based
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Parkour-Rough-v0 --num_envs 4096 --headless
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/train.py --task Go2-Parkour-Rough-Abl3_5-v0 --num_envs 4096 --headless
 ```
 
 - Abl 4.0: Actor = prop_obs + scan encoding; Critic = prop_obs + priv_obs + raw scan
@@ -157,6 +162,10 @@ Conclusion
 ./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Rough-Direct-Abl3_5-v0 --num_envs 50 \
   --load_run <run_dir_name> \
   --checkpoint <checkpoint_file>
+
+# manager_based
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Parkour-Rough-v0 --num_envs 50
+./isaaclab.sh -p scripts/reinforcement_learning/rsl_rl/play.py --task Go2-Parkour-Rough-Abl3_5-v0 --num_envs 50
 ```
 Notes:
 - Change `max_init_terrain_level` by adding `env.terrain.max_init_terrain_level=9`.

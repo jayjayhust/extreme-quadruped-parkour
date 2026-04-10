@@ -192,8 +192,8 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
         prim_path="/World/ground",
         terrain_type="generator",
         terrain_generator=ROUGH_TERRAINS_CFG.replace(
-            size=(23.0, 6.0),  # Terrain Size 23m X 6m -> x축으로만 직진하니까!
-            num_rows=10,  # level 0~9 단계까지
+            size=(23.0, 6.0),  # Terrain Size 23m X 6m -> Because it only moves straight along the x-axis!
+            num_rows=10,  # level 0~9 step up
             num_cols=18,  # gap/hurdle/stairs/parkour each occupy 3 columns, others 2 columns
             sub_terrains={
                 # 18컬럼에 7타입 배치 (대체로 균등 비율)
@@ -251,7 +251,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
                 ),
             },
         ),
-        max_init_terrain_level=5, # 사수님이 9였다가 1로 바꾸심 -> 내가 5로 바꿈
+        max_init_terrain_level=5, # My supervisor changed it from 9 to 1 -> I changed it to 5
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
             friction_combine_mode="multiply",
@@ -278,13 +278,13 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
 
     # Test25 reward scales (override from flat config)
     base_height_reward_scale = 0.0 # Test4 (considering managerbased curriculum)
-    flat_orientation_reward_scale = 0.0 # 험지니까 몸이 엄청 기울거라서
+    flat_orientation_reward_scale = 0.0 # Since it's rough terrain, body will be leaning a lot.
     feet_air_time_reward_scale = 0.125 # Test25 (@ Extreme Parkour: 0)
     lin_vel_reward_scale = 3.0 # Test23
     yaw_rate_reward_scale = 1.5 # Test23
-    z_vel_reward_scale = -0.0 # Test9 (jumping 많은 지형 고려) # 참고: Extreme Parkour: -0.5
+    z_vel_reward_scale = -0.0 # Test9 (jumping, lots of terrain to consider) # reference: Extreme Parkour: -0.5
     ang_vel_reward_scale = -0.05
-    joint_torque_reward_scale = -2.5e-5 # 참고: Extreme Parkour: -1.0e-5
+    joint_torque_reward_scale = -2.5e-5 # reference: Extreme Parkour: -1.0e-5
     joint_accel_reward_scale = -2.5e-7
     action_rate_reward_scale = -0.01 # Test 22(Hmm didn't overcome Gap so didn't consider "Extreme Parkour: -0.1 scale")
     undesired_contact_reward_scale = -0.8 # Test4 (considering managerbased curriculum)
@@ -294,7 +294,7 @@ class Go2RoughEnvCfg(Go2FlatEnvCfg):
     work_reward_scale = -0.003 # Test 12
     hip_pos_reward_scale = -0.3  # Test24 (@ Extreme Parkour: -0.5)
     feet_stumble_reward_scale = -0.0 # Test23 (@ Extreme Parkour: -1.0)
-    feet_stumble_ratio = 4.0 # Reward Scale이 아니라, lateral force > fleet_stumble_ratio*|vertical force| 이면 패널티 주도록(옆으로 미끌리는거 방지)
+    feet_stumble_ratio = 4.0 # Reward Scale（not this）, lateral force > fleet_stumble_ratio*|vertical force| -> apply a penalty on this side (prevents sideways sliding)
 
     # keep curriculum active and random commands for training
     command_mode: str = "fixed"

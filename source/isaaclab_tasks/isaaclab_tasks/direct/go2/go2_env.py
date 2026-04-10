@@ -298,7 +298,7 @@ class Go2Env(DirectRLEnv):
             height_data = (
                 self._height_scanner.data.pos_w[:, 2].unsqueeze(1) - self._height_scanner.data.ray_hits_w[..., 2] - 0.5
             ).clip(-1.0, 1.0)
-        scan_data = height_data
+        scan_data = height_data  # (num_envs, num_rays)
         policy_scan = scan_data if self.cfg.use_scan_in_policy else None
         critic_scan = scan_data if self.cfg.use_scan_in_critic else None
         scan_first_policy = getattr(self.cfg, "scan_first_in_policy", False)
@@ -310,6 +310,7 @@ class Go2Env(DirectRLEnv):
             torch.norm(net_contact_forces[:, -1, self._feet_ids], dim=-1) > 1.0
         ).float()
 
+        # Proprioceptive observation: robot state + commands + actions + foot contacts
         prop_obs = torch.cat(
             [
                 self._robot.data.joint_pos - self._robot.data.default_joint_pos,  # 12D
@@ -338,6 +339,7 @@ class Go2Env(DirectRLEnv):
         mass_com = torch.cat([self._dr_mass, self._dr_com], dim=1)  # 4D
         friction_coeff = self._dr_friction
 
+        # 29D = mass(1D), COM(3D), friction coeff(1D), P gain scale(12D), D gain scale(12D)
         priv_obs = torch.cat([mass_com, friction_coeff, self._p_gain_scale, self._d_gain_scale], dim=-1)  # 29D
         if critic_scan is not None:
             if scan_first_critic:
