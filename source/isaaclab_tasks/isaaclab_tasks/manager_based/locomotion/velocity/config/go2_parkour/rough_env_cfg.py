@@ -474,8 +474,12 @@ class Go2ParkourRoughEnvCfg(ManagerBasedRLEnvCfg):
         # update sensor update periods
         if self.scene.height_scanner is not None:
             self.scene.height_scanner.update_period = self.decimation * self.sim.dt
+            # https://isaac-sim.github.io/IsaacLab/main/source/api/lab/isaaclab.sensors.html#isaaclab.sensors.RayCasterCfg.debug_vis
+            self.scene.height_scanner.debug_vis = True  # debug visualization
         if self.scene.contact_forces is not None:
             self.scene.contact_forces.update_period = self.sim.dt
+            # https://isaac-sim.github.io/IsaacLab/main/source/api/lab/isaaclab.sensors.html#isaaclab.sensors.ContactSensorCfg.debug_vis
+            self.scene.contact_forces.debug_vis = True  # debug visualization
 
         # enable curriculum for terrain generator
         if getattr(self.curriculum, "terrain_levels", None) is not None:

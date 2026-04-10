@@ -8,7 +8,25 @@
 - [__init__.py](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py)
 - [terrain_generator.py](file://source/isaaclab/isaaclab/terrains/terrain_generator.py)
 - [configclass.py](file://source/isaaclab/isaaclab/utils/configclass.py)
+- [rough_env_cfg.py](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py)
+- [__init__.py](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/__init__.py)
+- [observations.py](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/mdp/observations.py)
+- [rsl_rl_ppo_cfg.py](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/agents/rsl_rl_ppo_cfg.py)
+- [manager_based_env.py](file://source/isaaclab/isaaclab/envs/manager_based_env.py)
+- [manager_based_env_cfg.py](file://source/isaaclab/isaaclab/envs/manager_based_env_cfg.py)
+- [manager_based_rl_env_cfg.py](file://source/isaaclab/isaaclab/envs/manager_based_rl_env_cfg.py)
+- [train.py](file://scripts/reinforcement_learning/rsl_rl/train.py)
+- [run_train_envs.py](file://tools/run_train_envs.py)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added comprehensive documentation for manager-based environment configuration system
+- Documented new manager-based Go2 parkour environment setup with flat/rough/play variants
+- Added training commands and Gym registration for manager-based environments
+- Enhanced ablation study framework with manager-based variants
+- Updated architecture diagrams to reflect both direct and manager-based approaches
+- Added practical examples for manager-based environment configuration
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -16,118 +34,108 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [Manager-Based Environment System](#manager-based-environment-system)
+7. [Dependency Analysis](#dependency-analysis)
+8. [Performance Considerations](#performance-considerations)
+9. [Training Commands and Setup](#training-commands-and-setup)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
 
 ## Introduction
-This document explains the Go2 Environment Configuration and Setup system used for quadruped parkour and locomotion research. It focuses on:
-- Environment configuration classes Go2FlatEnvCfg and Go2RoughEnvCfg and their roles in the ablation study framework
-- Terrain generation parameters, reward function scaling, sensor integration, and curriculum learning settings
-- Environment registration via Gym and Gymnasium, and the Gym-compatible environment setup
-- Agent configuration system using PPO hyperparameters, neural network architectures, and training parameters
-- Practical examples for different terrain types, reward customization, and ablation setups
-- Parameter validation and default value handling mechanisms
+This document explains the Go2 Environment Configuration and Setup system used for quadruped parkour and locomotion research. The system now supports both direct and manager-based configuration approaches, providing enhanced modularity and flexibility for environment design. Key features include:
+- Dual configuration paradigms: direct configuration classes and manager-based configuration classes
+- Comprehensive environment variants: flat, rough, play, and ablation studies
+- Advanced manager-based MDP components: observations, rewards, commands, and curriculum
+- Unified Gym registration system supporting both configuration approaches
+- Complete training pipeline with manager-based environment setup
 
 ## Project Structure
-The Go2 environment is organized under the isaaclab_tasks package with three primary modules:
-- Environment configuration: defines environment parameters and reward terms
-- Environment runtime: implements the Gymnasium-compatible RL environment
-- Agent configuration: defines PPO runner and policy configurations for training
+The Go2 environment system now includes both direct and manager-based implementations organized under the isaaclab_tasks package:
 
 ```mermaid
 graph TB
-subgraph "Go2 Task Package"
-CFG["go2_env_cfg.py<br/>Configurations"]
-ENV["go2_env.py<br/>Gym Env Implementation"]
-AGENTS["agents/rsl_rl_ppo_cfg.py<br/>Agent Runner Configs"]
-REG["__init__.py<br/>Gym Registration"]
+subgraph "Direct Approach"
+DIRECT_CFG["direct/go2/go2_env_cfg.py<br/>Direct Configuration"]
+DIRECT_ENV["direct/go2/go2_env.py<br/>Direct Environment"]
+DIRECT_AGENTS["direct/go2/agents/<br/>Agent Configurations"]
+DIRECT_REG["direct/go2/__init__.py<br/>Direct Gym Registration"]
 end
-CFG --> ENV
-AGENTS --> ENV
-REG --> ENV
+subgraph "Manager-Based Approach"
+MAN_CFG["manager_based/go2_parkour/<br/>rough_env_cfg.py<br/>Manager Configuration"]
+MAN_MDP["manager_based/go2_parkour/mdp/<br/>Observation Functions"]
+MAN_AGENTS["manager_based/go2_parkour/agents/<br/>RSL-RL Configurations"]
+MAN_REG["manager_based/go2_parkour/__init__.py<br/>Manager Gym Registration"]
+end
+DIRECT_CFG --> DIRECT_ENV
+DIRECT_ENV --> DIRECT_AGENTS
+DIRECT_REG --> DIRECT_ENV
+MAN_CFG --> MAN_MDP
+MAN_CFG --> MAN_AGENTS
+MAN_REG --> MAN_CFG
 ```
 
 **Diagram sources**
 - [go2_env_cfg.py:70-170](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L70-L170)
-- [go2_env.py:20-60](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L20-L60)
-- [rsl_rl_ppo_cfg.py:44-112](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py#L44-L112)
+- [rough_env_cfg.py:448-462](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L448-L462)
 - [__init__.py:18-47](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L18-L47)
+- [__init__.py:21-51](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/__init__.py#L21-L51)
 
 **Section sources**
 - [go2_env_cfg.py:70-170](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L70-L170)
-- [go2_env.py:20-60](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L20-L60)
-- [rsl_rl_ppo_cfg.py:44-112](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py#L44-L112)
+- [rough_env_cfg.py:448-462](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L448-L462)
 - [__init__.py:18-47](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L18-L47)
+- [__init__.py:21-51](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/__init__.py#L21-L51)
 
 ## Core Components
-- Go2FlatEnvCfg: Base configuration for flat terrain with minimal proprioceptive inputs and a simple reward function. Suitable for basic locomotion and baseline training.
-- Go2RoughEnvCfg: Enhanced configuration for rough, procedurally generated terrain with a height scanner (ray caster) providing dense spatial observations. Includes curriculum learning and advanced reward terms tuned for parkour-like challenges.
-- Go2RoughPlayEnvCfg: Evaluation variant that disables curriculum and sets fixed commands for deterministic playback.
-- Ablation variants (Abl1, Abl2.5, Abl3.5, Abl4.0, Abl7.0): Specialized subclasses that remove or alter sensor fusion and encoder pathways to isolate the contribution of perception to policy performance.
-- Agent runner configurations: PPO runner settings and policy architectures tailored to the Go2 task, including ablation-specific policies.
 
-Key configuration parameters:
-- Observation spaces: proprioceptive (prop) + optional scan (187 rays) for policy/critic
-- Reward scales: configurable per task and terrain difficulty
-- Sensors: contact sensors and a height scanner (ray caster) for terrain-aware locomotion
-- Curriculum: terrain difficulty progression and command sampling modes
+### Direct Environment Components
+- **Go2FlatEnvCfg**: Base configuration for flat terrain with minimal proprioceptive inputs
+- **Go2RoughEnvCfg**: Enhanced configuration for rough, procedurally generated terrain with height scanner
+- **Go2RoughPlayEnvCfg**: Evaluation variant with curriculum disabled and fixed commands
+- **Ablation Variants**: Abl1, Abl2.5, Abl3.5, Abl4.0, Abl7.0 for perception ablation studies
+
+### Manager-Based Environment Components
+- **Go2ParkourFlatEnvCfg**: Manager-based flat terrain configuration mirroring direct approach
+- **Go2ParkourRoughEnvCfg**: Manager-based rough terrain with custom parkour terrains
+- **Go2ParkourRoughPlayEnvCfg**: Manager-based evaluation variant
+- **Go2ParkourRoughAbl1-Abl7.0**: Manager-based ablation variants with scan encoding options
 
 **Section sources**
 - [go2_env_cfg.py:70-170](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L70-L170)
 - [go2_env_cfg.py:172-314](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L172-L314)
-- [go2_env_cfg.py:316-353](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L316-L353)
-- [go2_env.py:293-355](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L293-L355)
-- [rsl_rl_ppo_cfg.py:44-155](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py#L44-L155)
+- [rough_env_cfg.py:505-757](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L505-L757)
 
 ## Architecture Overview
-The environment integrates configuration-driven behavior with a Gymnasium-compatible interface. The configuration classes define the environment’s dynamics, sensors, rewards, and curriculum. The environment runtime constructs the scene, applies actions, computes observations and rewards, and manages resets and curriculum updates.
+The environment system now supports two distinct architectural approaches while maintaining compatibility:
 
 ```mermaid
 sequenceDiagram
 participant User as "User Script"
-participant Gym as "Gym Registry (__init__.py)"
-participant Env as "Go2Env (go2_env.py)"
-participant Cfg as "Go2EnvCfg (go2_env_cfg.py)"
-participant Agent as "RSL-RL PPO Runner (rsl_rl_ppo_cfg.py)"
-User->>Gym : gym.make("Go2-Rough-Direct-v0")
-Gym->>Env : construct(cfg_entry_point, rsl_rl_cfg_entry_point)
-Env->>Cfg : load configuration (flat/rough/ablation)
-Env->>Env : _setup_scene(), instantiate robot, sensors
-User->>Env : step(action)
-Env->>Env : _pre_physics_step(), _apply_action()
-Env->>Env : _get_observations(), _get_rewards()
-Env-->>User : (obs, reward, terminated, truncated, info)
+participant DirectReg as "Direct Gym Registry"
+participant ManagerReg as "Manager-Based Gym Registry"
+participant DirectEnv as "Direct Go2Env"
+participant ManagerEnv as "Manager-Based Go2Env"
+participant Agent as "RSL-RL Runner"
+User->>DirectReg : gym.make("Go2-Rough-Direct-v0")
+DirectReg->>DirectEnv : construct(direct_cfg)
+DirectEnv->>DirectEnv : _setup_scene(), instantiate robot, sensors
+User->>ManagerReg : gym.make("Go2-Parkour-Rough-v0")
+ManagerReg->>ManagerEnv : construct(manager_cfg)
+ManagerEnv->>ManagerEnv : load_managers(), setup MDP components
 User->>Agent : train(runner_cfg, policy_cfg)
+Agent->>DirectEnv : step(action) or ManagerEnv : step(action)
 Agent-->>User : metrics/logs
 ```
 
 **Diagram sources**
 - [__init__.py:18-47](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L18-L47)
-- [go2_env.py:20-60](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L20-L60)
-- [go2_env_cfg.py:70-170](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L70-L170)
-- [rsl_rl_ppo_cfg.py:44-112](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py#L44-L112)
+- [__init__.py:21-51](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/__init__.py#L21-L51)
+- [manager_based_env.py:110-157](file://source/isaaclab/isaaclab/envs/manager_based_env.py#L110-L157)
 
 ## Detailed Component Analysis
 
-### Environment Configuration Classes
-- Go2FlatEnvCfg
-  - Proprioceptive-only observations (no scan)
-  - Flat terrain with plane ground
-  - Basic reward terms for velocity tracking and stabilization
-  - Command sampling modes and curriculum toggle
-- Go2RoughEnvCfg
-  - Adds a height scanner (ray caster) for dense terrain perception
-  - Procedurally generated rough terrain with curriculum
-  - Extended reward terms for parkour-relevant behaviors
-  - Heading command mode and fixed command overrides for parkour-like training
-- Play configuration
-  - Disables curriculum and sets fixed commands for evaluation
-- Ablation configurations
-  - Abl1: removes scan from policy
-  - Abl2.5: scans first in policy/critic
-  - Abl3.5–Abl7.0: variations in scan encoding and privilege observation encoding
+### Direct Environment Configuration Classes
+The direct approach maintains the original configuration structure with enhanced ablation capabilities:
 
 ```mermaid
 classDiagram
@@ -177,296 +185,292 @@ class Go2RoughEnvCfg {
 +tuple command_heading_range
 +tuple command_yaw_range
 }
-class Go2RoughPlayEnvCfg {
-+bool use_curriculum
-+str command_mode
-+tuple fixed_command
-}
-class Go2RoughAbl1EnvCfg {
-+bool use_scan_in_policy
-}
-class Go2RoughAbl2_5EnvCfg {
-+bool scan_first_in_policy
-+bool scan_first_in_critic
-}
-Go2FlatEnvCfg --|> DirectRLEnvCfg
-Go2RoughEnvCfg --|> Go2FlatEnvCfg
-Go2RoughPlayEnvCfg --|> Go2RoughEnvCfg
-Go2RoughAbl1EnvCfg --|> Go2RoughEnvCfg
-Go2RoughAbl2_5EnvCfg --|> Go2RoughEnvCfg
 ```
 
 **Diagram sources**
 - [go2_env_cfg.py:70-170](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L70-L170)
 - [go2_env_cfg.py:172-314](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L172-L314)
-- [go2_env_cfg.py:316-353](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L316-L353)
+
+### Manager-Based Environment Configuration Classes
+The manager-based approach introduces a modular MDP architecture with dedicated configuration classes:
+
+```mermaid
+classDiagram
+class ManagerBasedRLEnvCfg {
++ViewerCfg viewer
++SimulationCfg sim
++InteractiveSceneCfg scene
++ObservationManager obs_mgr
++ActionManager action_mgr
++EventManager event_mgr
++RewardManager reward_mgr
++TerminationManager term_mgr
++CurriculumManager curr_mgr
++CommandManager cmd_mgr
++int decimation
++float episode_length_s
+}
+class Go2ParkourSceneCfg {
++TerrainImporterCfg terrain
++ArticulationCfg robot
++RayCasterCfg height_scanner
++ContactSensorCfg contact_forces
++AssetBaseCfg sky_light
++int num_envs
++float env_spacing
+}
+class Go2ParkourObservationsCfg {
++ObsGroup policy
++ObsGroup critic
++class PolicyCfg
++class CriticCfg
+}
+class Go2ParkourRewardsCfg {
++RewTerm track_lin_vel_xy_exp
++RewTerm track_ang_vel_z_exp
++RewTerm lin_vel_z_l2
++RewTerm ang_vel_xy_l2
++RewTerm dof_torques_l2
++RewTerm action_rate_l2
++RewTerm feet_air_time
++RewTerm undesired_contacts
++RewTerm flat_orientation_l2
++RewTerm base_height
+}
+class Go2ParkourCommandsCfg {
++CommandTerm base_velocity
+}
+class Go2ParkourActionsCfg {
++ActionTerm joint_pos
+}
+class Go2ParkourEventCfg {
++EventTerm physics_material
++EventTerm add_base_mass
++EventTerm base_com
++EventTerm randomize_pd
++EventTerm reset_base
++EventTerm reset_robot_joints
+}
+class Go2ParkourTerminationsCfg {
++DoneTerm time_out
++DoneTerm base_contact
+}
+class Go2ParkourCurriculumCfg {
++CurrTerm terrain_levels
+}
+```
+
+**Diagram sources**
+- [manager_based_rl_env_cfg.py:14-81](file://source/isaaclab/isaaclab/envs/manager_based_rl_env_cfg.py#L14-L81)
+- [rough_env_cfg.py:57-170](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L57-L170)
+- [rough_env_cfg.py:177-441](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L177-L441)
+
+**Section sources**
+- [manager_based_rl_env_cfg.py:14-81](file://source/isaaclab/isaaclab/envs/manager_based_rl_env_cfg.py#L14-L81)
+- [rough_env_cfg.py:57-170](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L57-L170)
+- [rough_env_cfg.py:177-441](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L177-L441)
+
+## Manager-Based Environment System
+
+### Manager Architecture
+The manager-based system introduces a modular approach with dedicated managers for different aspects of the environment:
+
+```mermaid
+graph TB
+subgraph "Manager-Based Environment"
+SCENE["InteractiveScene<br/>Scene Management"]
+OBS_MGR["ObservationManager<br/>Sensor Data Processing"]
+ACTION_MGR["ActionManager<br/>Action Processing"]
+EVENT_MGR["EventManager<br/>Domain Randomization"]
+REWARD_MGR["RewardManager<br/>Reward Calculation"]
+TERM_MGR["TerminationManager<br/>Episode End Conditions"]
+CURR_MGR["CurriculumManager<br/>Difficulty Progression"]
+CMD_MGR["CommandManager<br/>Task Commands"]
+end
+SCENE --> OBS_MGR
+SCENE --> ACTION_MGR
+SCENE --> EVENT_MGR
+OBS_MGR --> REWARD_MGR
+REWARD_MGR --> TERM_MGR
+CMD_MGR --> ACTION_MGR
+EVENT_MGR --> SCENE
+```
+
+**Diagram sources**
+- [manager_based_env.py:30-69](file://source/isaaclab/isaaclab/envs/manager_based_env.py#L30-L69)
+- [manager_based_env.py:110-157](file://source/isaaclab/isaaclab/envs/manager_based_env.py#L110-L157)
+
+### Custom MDP Components
+The manager-based system includes custom MDP components for parkour-specific functionality:
+
+- **Custom Observations**: Privileged observations for mass, COM, friction, and PD gain scaling
+- **Custom Rewards**: Parkour-specific reward terms including torque sum, stop penalties, and mechanical work
+- **Custom Commands**: Velocity commands with heading control for parkour navigation
+- **Custom Events**: Domain randomization for physics properties and robot configuration
+
+**Section sources**
+- [observations.py:33-111](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/mdp/observations.py#L33-L111)
+- [rough_env_cfg.py:367-423](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L367-L423)
+- [rough_env_cfg.py:177-195](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L177-L195)
+
+## Dependency Analysis
+The dual configuration system maintains clear separation of concerns while enabling shared functionality:
+
+```mermaid
+graph TB
+subgraph "Direct Approach Dependencies"
+DIRECT_CFG["Direct Config Classes"] --> DIRECT_IMPL["Direct Environment Implementation"]
+DIRECT_IMPL --> DIRECT_AGENTS["Direct Agent Configurations"]
+DIRECT_REG["Direct Gym Registration"] --> DIRECT_IMPL
+end
+subgraph "Manager-Based Dependencies"
+MAN_CFG["Manager Config Classes"] --> MAN_MDP["Custom MDP Components"]
+MAN_MDP --> MAN_IMPL["Manager-Based Environment"]
+MAN_IMPL --> MAN_AGENTS["Manager-Based Agent Configurations"]
+MAN_REG["Manager-Based Gym Registration"] --> MAN_IMPL
+end
+subgraph "Shared Dependencies"
+COMMON["Common Managers"] --> DIRECT_IMPL
+COMMON --> MAN_IMPL
+ASSETS["Asset Definitions"] --> DIRECT_IMPL
+ASSETS --> MAN_IMPL
+SENSORS["Sensor Definitions"] --> DIRECT_IMPL
+SENSORS --> MAN_IMPL
+TERRAINS["Terrain Definitions"] --> DIRECT_IMPL
+TERRAINS --> MAN_IMPL
+end
+```
+
+**Diagram sources**
+- [go2_env_cfg.py:70-170](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L70-L170)
+- [rough_env_cfg.py:448-462](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L448-L462)
+- [manager_based_env_cfg.py:39-134](file://source/isaaclab/isaaclab/envs/manager_based_env_cfg.py#L39-L134)
 
 **Section sources**
 - [go2_env_cfg.py:70-170](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L70-L170)
-- [go2_env_cfg.py:172-314](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L172-L314)
-- [go2_env_cfg.py:316-353](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L316-L353)
+- [rough_env_cfg.py:448-462](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/rough_env_cfg.py#L448-L462)
+- [manager_based_env_cfg.py:39-134](file://source/isaaclab/isaaclab/envs/manager_based_env_cfg.py#L39-L134)
 
-### Environment Runtime and Sensor Integration
-- Scene setup: instantiates robot, contact sensor, and optionally the height scanner for rough terrain
-- Action pipeline: scales actions and applies joint position targets
-- Observations:
-  - Policy input: prop + optional scan (order controlled by scan_first flags)
-  - Critic input: prop + privileged obs (mass, COM, friction, PD gains) + optional scan
-- Rewards: composite of velocity tracking, stabilization, contact penalties, and terrain-aware terms
-- Curriculum: updates terrain difficulty based on achieved distance and command speed
+## Performance Considerations
+Both configuration approaches offer distinct performance characteristics:
 
-```mermaid
-flowchart TD
-Start(["Reset/Step"]) --> Actions["Scale and Apply Actions"]
-Actions --> Observe["Compute Observations"]
-Observe --> PolicyObs["Policy Obs: prop + optional scan"]
-Observe --> CriticObs["Critic Obs: prop + priv + optional scan"]
-Actions --> Dynamics["Physics Step"]
-Dynamics --> Rewards["Compute Rewards"]
-Rewards --> DoneCheck{"Termination/Timeout?"}
-DoneCheck --> |Yes| Reset["Reset Environments"]
-DoneCheck --> |No| Continue["Continue Episode"]
-Reset --> Curriculum["Update Curriculum (Rough)"]
-Curriculum --> Start
+### Direct Approach Performance
+- **Memory Efficiency**: Lower memory overhead due to direct sensor instantiation
+- **Computation Speed**: Faster observation computation with direct tensor access
+- **Simplicity**: Straightforward implementation with minimal manager overhead
+
+### Manager-Based Approach Performance
+- **Modularity**: Higher memory usage due to manager overhead and intermediate buffers
+- **Flexibility**: More computationally expensive but highly configurable
+- **Extensibility**: Easy addition of new managers and MDP components
+- **Customization**: Supports complex MDP configurations with custom functions
+
+## Training Commands and Setup
+
+### Manager-Based Environment Registration
+The manager-based system provides comprehensive Gym registration for all environment variants:
+
+```python
+# Flat terrain registration
+gym.register(
+    id="Go2-Parkour-Flat-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rough_env_cfg:Go2ParkourFlatEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:Go2ParkourFlatPPORunnerCfg",
+    },
+)
+
+# Rough terrain registration  
+gym.register(
+    id="Go2-Parkour-Rough-v0",
+    entry_point="isaaclab.envs:ManagerBasedRLEnv",
+    disable_env_checker=True,
+    kwargs={
+        "env_cfg_entry_point": f"{__name__}.rough_env_cfg:Go2ParkourRoughEnvCfg",
+        "rsl_rl_cfg_entry_point": f"{agents.__name__}.rsl_rl_ppo_cfg:Go2ParkourRoughPPORunnerCfg",
+    },
+)
 ```
 
-**Diagram sources**
-- [go2_env.py:233-274](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L233-L274)
-- [go2_env.py:293-355](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L293-L355)
-- [go2_env.py:467-535](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L467-L535)
+### Training Commands
+The manager-based system supports the same training workflow as the direct approach:
 
-**Section sources**
-- [go2_env.py:212-232](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L212-L232)
-- [go2_env.py:293-355](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L293-L355)
-- [go2_env.py:467-535](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L467-L535)
+```bash
+# Train manager-based rough environment
+python scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Go2-Parkour-Rough-v0 \
+    --num_envs 4096 \
+    --max_iterations 20000
 
-### Environment Registration and Gym-Compatible Setup
-- Registers multiple Gym environments:
-  - Flat: Go2-Direct-v0
-  - Rough: Go2-Rough-Direct-v0 and Abl variants
-  - Play: Go2-Rough-Direct-Play-v0 and Abl Play variants
-- Each registration passes environment and agent configuration entry points to the environment constructor
+# Train manager-based flat environment
+python scripts/reinforcement_learning/rsl_rl/train.py \
+    --task Go2-Parkour-Flat-v0 \
+    --num_envs 1024 \
+    --max_iterations 5000
 
-```mermaid
-sequenceDiagram
-participant Reg as "__init__.py"
-participant Gym as "Gym Registry"
-participant Env as "Go2Env"
-Reg->>Gym : gym.register(id, entry_point, kwargs)
-Note over Reg,Gym : kwargs include env_cfg_entry_point and rsl_rl_cfg_entry_point
-Gym->>Env : construct(cfg_entry_point, rsl_rl_cfg_entry_point)
-Env-->>Gym : ready for training/inference
+# Run multiple environments with commit tags
+python tools/run_train_envs.py --lib-name rsl_rl
 ```
 
-**Diagram sources**
-- [__init__.py:18-47](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L18-L47)
-- [__init__.py:49-147](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L49-L147)
-
-**Section sources**
-- [__init__.py:18-47](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L18-L47)
-- [__init__.py:49-147](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L49-L147)
-
-### Agent Configuration System (PPO)
-- Runner configurations:
-  - Go2FlatPPORunnerCfg: baseline PPO with proprioceptive-only policy
-  - Go2RoughPPORunnerCfg: PPO with scan observations and higher learning rate
-  - Abl variants:
-    - Abl1: policy without scan
-    - Abl2.5: policy without scan encoder (ActorCritic)
-    - Abl3.5–Abl7.0: policy with scan encoder and/or privileged encoder modifications
-- Policy architecture:
-  - Actor/Critic hidden layers and activation
-  - Scan encoder dimensions and privilege encoder dimensions
-  - Noise initialization and KL divergence targeting
+### Agent Configuration for Manager-Based Environments
+Manager-based environments use specialized agent configurations with scan encoding support:
 
 ```mermaid
 classDiagram
 class RslRlOnPolicyRunnerCfg
-class RslRlPpoActorCriticCfg {
-+str class_name
-+float init_noise_std
-+str noise_std_type
-+int[] actor_hidden_dims
-+int[] critic_hidden_dims
-+str activation
-+int num_prop_obs
-+int num_scan_obs
-+int[] scan_encoder_dims
-+int[] priv_obs_encoder_dims
+class Go2ParkourFlatPPORunnerCfg {
++int num_steps_per_env = 24
++int max_iterations = 5000
++int save_interval = 50
++str experiment_name = "go2_parkour_flat"
++bool empirical_normalization = True
++RslRlPpoActorCriticCfg policy
++RslRlPpoAlgorithmCfg algorithm
 }
-class RslRlPpoAlgorithmCfg {
-+float value_loss_coef
-+bool use_clipped_value_loss
-+float clip_param
-+float entropy_coef
-+int num_learning_epochs
-+int num_mini_batches
-+float learning_rate
-+str schedule
-+float gamma
-+float lam
-+float desired_kl
-+float max_grad_norm
+class Go2ParkourRoughPPORunnerCfg {
++int num_steps_per_env = 24
++int max_iterations = 20000
++int save_interval = 50
++str experiment_name = "go2_parkour_rough"
++bool empirical_normalization = True
++RslRlPpoActorCriticCfg policy
++RslRlPpoAlgorithmCfg algorithm
 }
-class Go2FlatPPORunnerCfg
-class Go2RoughPPORunnerCfg
-class Go2RoughAbl1PPORunnerCfg
-class Go2RoughAbl2_5PPORunnerCfg
-class Go2RoughAbl3_5PPORunnerCfg
-class Go2RoughAbl4_0PPORunnerCfg
-class Go2RoughAbl7_0PPORunnerCfg
-Go2FlatPPORunnerCfg --> RslRlOnPolicyRunnerCfg
-Go2RoughPPORunnerCfg --> RslRlOnPolicyRunnerCfg
-Go2RoughAbl1PPORunnerCfg --> Go2RoughPPORunnerCfg
-Go2RoughAbl2_5PPORunnerCfg --> Go2RoughPPORunnerCfg
-Go2RoughAbl3_5PPORunnerCfg --> Go2RoughPPORunnerCfg
-Go2RoughAbl4_0PPORunnerCfg --> Go2RoughPPORunnerCfg
-Go2RoughAbl7_0PPORunnerCfg --> Go2RoughPPORunnerCfg
-RslRlPpoActorCriticCfg <-- Go2FlatPPORunnerCfg
-RslRlPpoActorCriticCfg <-- Go2RoughPPORunnerCfg
-RslRlPpoActorCriticCfg <-- Go2RoughAbl1PPORunnerCfg
-RslRlPpoActorCriticCfg <-- Go2RoughAbl2_5PPORunnerCfg
-RslRlPpoActorCriticCfg <-- Go2RoughAbl3_5PPORunnerCfg
-RslRlPpoActorCriticCfg <-- Go2RoughAbl4_0PPORunnerCfg
-RslRlPpoActorCriticCfg <-- Go2RoughAbl7_0PPORunnerCfg
-RslRlPpoAlgorithmCfg <-- Go2FlatPPORunnerCfg
-RslRlPpoAlgorithmCfg <-- Go2RoughPPORunnerCfg
+class Go2ParkourRoughAbl1PPORunnerCfg {
++experiment_name = "go2_parkour_rough_abl1"
++policy = _make_go2_parkour_rough_policy_cfg(num_actor_scan_obs=0)
+}
 ```
 
 **Diagram sources**
-- [rsl_rl_ppo_cfg.py:44-155](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py#L44-L155)
+- [rsl_rl_ppo_cfg.py:49-158](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/agents/rsl_rl_ppo_cfg.py#L49-L158)
 
 **Section sources**
-- [rsl_rl_ppo_cfg.py:44-155](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py#L44-L155)
-
-### Practical Examples
-
-- Flat terrain baseline
-  - Use Go2-Direct-v0 with Go2FlatEnvCfg and Go2FlatPPORunnerCfg
-  - Ideal for initial policy learning and debugging
-
-- Rough terrain parkour
-  - Use Go2-Rough-Direct-v0 with Go2RoughEnvCfg and Go2RoughPPORunnerCfg
-  - Enables curriculum learning and heading command modes
-
-- Ablation studies
-  - Abl1: remove scan from policy (Go2-Rough-Direct-Abl1-v0)
-  - Abl2.5: remove scan encoder (Go2-Rough-Direct-Abl2_5-v0)
-  - Abl3.5: scan encoder for policy/critic (Go2-Rough-Direct-Abl3_5-v0)
-  - Abl4.0: scan encoder for policy only (Go2-Rough-Direct-Abl4_0-v0)
-  - Abl7.0: scan and privileged encoders (Go2-Rough-Direct-Abl7_0-v0)
-
-- Reward customization
-  - Adjust reward scales in the environment configuration classes (e.g., Go2RoughEnvCfg overrides)
-  - Example scales for parkour-like behaviors are provided in the rough configuration
-
-- Curriculum learning
-  - Enable curriculum via use_curriculum flag
-  - Configure command_mode and heading_command for parkour-like training
-
-**Section sources**
-- [__init__.py:18-47](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L18-L47)
-- [__init__.py:49-147](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L49-L147)
-- [go2_env_cfg.py:172-314](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L172-L314)
-- [go2_env_cfg.py:279-297](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L279-L297)
-
-### Relationship Between Configuration and Implementation
-- Configuration drives environment behavior:
-  - Observation space composition (prop + scan)
-  - Sensor instantiation (contact sensor, height scanner)
-  - Reward computation and logging
-  - Curriculum updates and command sampling
-- Implementation validates and applies configuration:
-  - Post-init recalculation of observation/state spaces
-  - Conditional sensor creation for rough terrain
-  - Dynamic command selection and heading control
-
-```mermaid
-graph LR
-Cfg["Go2EnvCfg (go2_env_cfg.py)"] --> Impl["_setup_scene(), _get_observations(), _get_rewards()"]
-Impl --> Obs["Observations"]
-Impl --> Rew["Rewards"]
-Impl --> Cur["Curriculum Updates"]
-```
-
-**Diagram sources**
-- [go2_env_cfg.py:311-313](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L311-L313)
-- [go2_env.py:212-232](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L212-L232)
-- [go2_env.py:293-355](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L293-L355)
-- [go2_env.py:473-535](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L473-L535)
-
-**Section sources**
-- [go2_env_cfg.py:311-313](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L311-L313)
-- [go2_env.py:212-232](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L212-L232)
-- [go2_env.py:293-355](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L293-L355)
-- [go2_env.py:473-535](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L473-L535)
-
-## Dependency Analysis
-- Environment configuration depends on:
-  - DirectRLEnvCfg base class
-  - Simulation and terrain configuration classes
-  - Asset and sensor configuration classes
-- Environment runtime depends on:
-  - Configuration classes for behavior
-  - Sensor classes for observations
-  - Reward computation logic
-- Agent runner depends on:
-  - PPO runner and algorithm configurations
-  - Policy configuration with optional scan encoders
-
-```mermaid
-graph TB
-EnvCfg["go2_env_cfg.py"] --> BaseCfg["DirectRLEnvCfg"]
-EnvCfg --> Sim["SimulationCfg"]
-EnvCfg --> Terrain["TerrainImporterCfg"]
-EnvCfg --> Assets["ArticulationCfg"]
-EnvCfg --> Sensors["ContactSensorCfg / RayCasterCfg"]
-EnvImpl["go2_env.py"] --> EnvCfg
-EnvImpl --> Sensors
-AgentCfg["rsl_rl_ppo_cfg.py"] --> Runner["RslRlOnPolicyRunnerCfg"]
-AgentCfg --> Policy["RslRlPpoActorCriticCfg"]
-AgentCfg --> Algo["RslRlPpoAlgorithmCfg"]
-Reg["__init__.py"] --> EnvImpl
-Reg --> AgentCfg
-```
-
-**Diagram sources**
-- [go2_env_cfg.py:70-170](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L70-L170)
-- [go2_env.py:20-60](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L20-L60)
-- [rsl_rl_ppo_cfg.py:44-155](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py#L44-L155)
-- [__init__.py:18-47](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L18-L47)
-
-**Section sources**
-- [go2_env_cfg.py:70-170](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L70-L170)
-- [go2_env.py:20-60](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L20-L60)
-- [rsl_rl_ppo_cfg.py:44-155](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/agents/rsl_rl_ppo_cfg.py#L44-L155)
-- [__init__.py:18-47](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/__init__.py#L18-L47)
-
-## Performance Considerations
-- Observation composition:
-  - Adding scan observations increases policy/critic input size; tune scan resolution and encoder dimensions accordingly
-- Curriculum and terrain generation:
-  - Larger terrain grids and diverse sub-terrains improve generalization but increase compute
-- Simulation settings:
-  - GPU patch counts and solver iterations impact stability and speed
-- Learning rates and batch sizes:
-  - Higher learning rates for rough terrain may require adjusted KL targets and gradient norms
+- [__init__.py:21-51](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/__init__.py#L21-L51)
+- [train.py:119-220](file://scripts/reinforcement_learning/rsl_rl/train.py#L119-L220)
+- [run_train_envs.py:40-80](file://tools/run_train_envs.py#L40-L80)
+- [rsl_rl_ppo_cfg.py:49-158](file://source/isaaclab_tasks/isaaclab_tasks/manager_based/locomotion/velocity/config/go2_parkour/agents/rsl_rl_ppo_cfg.py#L49-L158)
 
 ## Troubleshooting Guide
-- Missing type annotations or defaults:
-  - The configuration system enforces type hints and default values; ensure all fields are annotated or initialized
-- Unexpected observation sizes:
-  - Verify use_scan_in_policy/use_scan_in_critic flags and scan_first_* settings; post-init recalculations derive observation/state spaces
-- Curriculum not updating:
-  - Confirm use_curriculum is enabled and that terrain origins are available; check episode length and distance thresholds
-- Sensor not appearing:
-  - Height scanner is only instantiated for rough terrain configurations; ensure the environment uses Go2RoughEnvCfg or derived classes
+
+### Manager-Based Environment Issues
+- **Missing Manager Configuration**: Ensure all required managers (observations, actions, rewards, terminations) are properly configured
+- **Custom MDP Function Errors**: Verify custom observation and reward functions are properly imported and accessible
+- **Sensor Configuration Problems**: Check that manager-based sensors are properly defined in the scene configuration
+- **IO Descriptor Export**: Manager-based environments support IO descriptor export for policy deployment
+
+### Dual Configuration Compatibility
+- **Parameter Synchronization**: When switching between direct and manager-based configurations, ensure equivalent parameter values
+- **Observation Space Differences**: Manager-based environments may have different observation spaces due to modular MDP components
+- **Reward Function Variations**: Manager-based custom rewards may differ from direct reward implementations
+- **Training Stability**: Manager-based environments may require different hyperparameters due to increased complexity
 
 **Section sources**
+- [manager_based_env.py:193-200](file://source/isaaclab/isaaclab/envs/manager_based_env.py#L193-L200)
+- [train.py:158-165](file://scripts/reinforcement_learning/rsl_rl/train.py#L158-L165)
 - [configclass.py:221-236](file://source/isaaclab/isaaclab/utils/configclass.py#L221-L236)
-- [go2_env_cfg.py:311-313](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env_cfg.py#L311-L313)
-- [go2_env.py:473-535](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L473-L535)
-- [go2_env.py:212-232](file://source/isaaclab_tasks/isaaclab_tasks/direct/go2/go2_env.py#L212-L232)
 
 ## Conclusion
-The Go2 Environment Configuration and Setup system provides a flexible, modular framework for quadruped locomotion and parkour research. Go2FlatEnvCfg offers a simple baseline, while Go2RoughEnvCfg enables advanced perception and curriculum learning. The Gym registration and agent runner configurations support reproducible ablation studies and scalable training. Proper configuration of sensors, rewards, and curriculum yields robust policies capable of navigating challenging terrains.
+The enhanced Go2 Environment Configuration and Setup system now provides a comprehensive dual-approach framework supporting both direct and manager-based configuration paradigms. The manager-based approach offers superior modularity and extensibility for complex parkour environments, while maintaining compatibility with the established direct approach. Both systems support comprehensive ablation studies, advanced terrain generation, and unified Gym registration for seamless training workflows. The addition of manager-based environments significantly expands the toolkit for quadruped parkour research while preserving backward compatibility and familiar interfaces.
